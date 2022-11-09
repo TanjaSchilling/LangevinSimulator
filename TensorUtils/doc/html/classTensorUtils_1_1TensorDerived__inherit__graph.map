@@ -1,0 +1,5 @@
+<map id="TensorUtils::TensorDerived&lt; T, N &gt;" name="TensorUtils::TensorDerived&lt; T, N &gt;">
+<area shape="rect" id="node1" title="This class defines a tensor with fixed rank N=0,1,... and inherits from TensorBase...." alt="" coords="14,155,194,196"/>
+<area shape="rect" id="node2" href="$classTensorUtils_1_1TensorBase.html" title="This is the main class of this project. It inherits from std::vector&lt;T&gt; and adds methods to make it a..." alt="" coords="5,80,203,107"/>
+<area shape="rect" id="node3" title=" " alt="" coords="46,5,162,32"/>
+</map>

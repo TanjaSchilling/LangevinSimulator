@@ -1,0 +1,6 @@
+<map id="TensorUtils::TensorBase&lt; T &gt;" name="TensorUtils::TensorBase&lt; T &gt;">
+<area shape="rect" id="node1" title="This is the main class of this project. It inherits from std::vector&lt;T&gt; and adds methods to make it a..." alt="" coords="98,80,295,107"/>
+<area shape="rect" id="node3" href="$classTensorUtils_1_1TensorDerived.html" title="This class defines a tensor with fixed rank N=0,1,... and inherits from TensorBase...." alt="" coords="5,155,185,196"/>
+<area shape="rect" id="node4" href="$classTensorUtils_1_1TensorDerived_3_01T_00-1_01_4.html" title="This class specialization defines a tensor with mutable rank and inherits from TensorBase." alt="" coords="209,155,389,196"/>
+<area shape="rect" id="node2" title=" " alt="" coords="139,5,255,32"/>
+</map>
