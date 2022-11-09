@@ -330,9 +330,9 @@ are part of the software "LangevinSimulator" and are licensed under the GNU GPL3
 
 **Copyright 2020-2022 Christoph Widder, Fabian Glatzel and Tanja Schilling**
 
-Christoph Widder <christoph.widder[at]merkur.uni-freiburg.de>
-Fabian Glatzel <fabian.glatzel[at]physik.uni-freiburg.de>
-Tanja Schilling <tanja.schilling[at]physik.uni-freiburg.de>
+- Christoph Widder <christoph.widder[at]merkur.uni-freiburg.de>
+- Fabian Glatzel <fabian.glatzel[at]physik.uni-freiburg.de>
+- Tanja Schilling <tanja.schilling[at]physik.uni-freiburg.de>
 
 This file is part of LangevinSimulator.
 
