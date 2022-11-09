@@ -1,0 +1,11 @@
+out_folder TEST_OUT
+in_folder TEST_DATA
+in_prefix dipoleMoment
+file_range 0-99
+num_obs 2
+t_min 50
+t_max 90
+increment 5
+shift 1
+num_sim 1000
+txt_out True

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="main_kernel" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/main_kernel" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option parameters='-f &quot;parameter.txt&quot;' />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DTHROW_EXCEPTIONS=1" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/main_kernel" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option parameters='-f &quot;parameter.txt&quot;' />
+				<Linker>
+					<Add option="-O3" />
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=c++17" />
+			<Add option="-DENABLE_INTEGRAL_TYPES=0" />
+			<Add directory="../ParameterHandler/src" />
+			<Add directory="../TensorUtils/include" />
+		</Compiler>
+		<Linker>
+			<Add library="gsl" />
+			<Add library="gslcblas" />
+			<Add library="m" />
+			<Add library="stdc++fs" />
+		</Linker>
+		<Unit filename="../ParameterHandler/src/parameter_handler.cpp" />
+		<Unit filename="../ParameterHandler/src/parameter_handler.hpp" />
+		<Unit filename="../TensorUtils/include/ErrorHandler.hpp" />
+		<Unit filename="../TensorUtils/include/TensorBase.hpp" />
+		<Unit filename="../TensorUtils/include/TensorDerived.hpp" />
+		<Unit filename="../TensorUtils/include/TensorUtils.hpp" />
+		<Unit filename="../TensorUtils/src/TensorBase.cpp" />
+		<Unit filename="../TensorUtils/src/TensorDerived.cpp" />
+		<Unit filename="src/InputOutput.cpp" />
+		<Unit filename="src/InputOutput.hpp" />
+		<Unit filename="src/KernelMethods.cpp" />
+		<Unit filename="src/KernelMethods.hpp" />
+		<Unit filename="src/RK4.cpp" />
+		<Unit filename="src/RK4.hpp" />
+		<Unit filename="src/RandomForceGenerator.cpp" />
+		<Unit filename="src/RandomForceGenerator.hpp" />
+		<Unit filename="src/main_fluctuating_forces.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="src/main_kernel.cpp" />
+		<Unit filename="src/main_simulator.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="src/main_two_time_correlations.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>
