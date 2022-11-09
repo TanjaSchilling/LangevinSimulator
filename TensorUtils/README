@@ -1,0 +1,86 @@
+
+###################################################################################################
+# TensorUtils Verson 0.1
+###################################################################################################
+
+Please find the documentation in ./doc.
+You are welcome to report any bugs to <tensorutils@gmail.com>.
+Please visit <https://github.com/TensorUtils/TensorUtils> for the latest version.
+
+
+###################################################################################################
+# Introduction
+###################################################################################################
+
+TensorUtils presents a tensor class which is derived from std::vector<T>.
+It allows the usage of all std::vector routines, but has its own constructors.
+The tensor class allows to allocate, initialize, read and write tensors of 
+floating or integral types up to rank 8. It provides text and binary file 
+formats as well as element-wise operations with support for type conversions 
+and chaining. The usage of this library might help to avoid memory leaks, 
+segmentation faults, nested loops as well as error-prone index conversions. 
+All methods are explicitly instantiated and stored in a shared library, which 
+minimizes the compile time of your source code. Additionally, you will find
+routines to transpose, reshape and slice tensors as well as a generalized
+tensor product. 
+
+Supported types for the components are the follogwing:
+
+DATA TYPE           | EXTENSION
+--------------------|-----------
+float               | .f32
+double              | .f64
+long double         | .f80
+unsigned char       | .uc
+signed char         | .sc
+unsigned short      | .us
+unsigned int        | .u
+unsigned long       | .ul
+unsigned long long  | .ull
+short               | .s
+int                 | .int
+long                | .l
+long long           | .ll
+
+The whole project is wrapped into the namespace TensorUtils from 
+"TensorUtils.hpp". See the main class TensorUtils::TensorBase<T> for routines 
+and examples. Although this base class is fully functional, it is recommended 
+to use the derived class TensorUtils::TensorDerived<T,N> which allows you to 
+use tensors of arbitrary rank as well as tensors with fixed rank. This will be 
+helpful if you need distinct types for tensors of different ranks. More details 
+on error-handling can be found in ErrorHandler.
+
+Once the library is installed, you can use the following alias declarations for 
+the class TensorUtils::TensorDerived<T,N>:
+
+    #include "TensorUtils.hpp"
+    int main()
+    {
+        using namespace TensorUtils;
+        tensor<double> foo;   // arbitrary rank:  TensorDerived<double,-1>
+        tensor<double,4> bar; // fixed rank:      TensorDerived<double,4>
+        return 0;
+    }
+
+
+###################################################################################################
+# License
+###################################################################################################
+
+TensorUtils Version 0.1
+
+Copyright 2022 Christoph Widder
+
+This file is part of TensorUtils.
+
+TensorUtils is free software: you can redistribute it and/or modify it under the terms of
+the GNU General Public License as published by the Free Software Foundation, either
+version 3 of the License, or (at your option) any later version.
+
+TensorUtils is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with TensorUtils.
+If not, see <https://www.gnu.org/licenses/>.
+
