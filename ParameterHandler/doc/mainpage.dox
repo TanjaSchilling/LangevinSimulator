@@ -1,0 +1,77 @@
+// SPDX-FileCopyrightText: 2021 Andreas Härtel <http://andreashaertel.anno1982.de/>
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-PackageName: parameter_handler
+// SPDX-PackageHomePage: https://github.com/andreashaertel/parameter_handler
+/** \mainpage Project library parameter_handler
+ * 
+ *  This documentation is generated automatically by doxygen. 
+ *  For more information about Doxygen, please visit 
+ *  [doxygen](http://www.doxygen.nl/index.html). 
+ *
+ *  \section intro_sec Introduction
+ *
+ *  The parameter_handler is a C++ code project started during the studies of Andreas Härtel. 
+ *  The project contains the C++ library and python module parameter_handler. 
+ *
+ *  
+ * 
+ * 
+ *  \section use_sec Use of the C++ library
+ *
+ *  To use the C++ library, you have to install the library on your system. 
+ *  Clone from the github repository andreashaertel/parameter_handler to get a copy of the 
+ *  library sources. Then run "make init" and "make" in your parameter_handler directory 
+ *  to build the library and header file. 
+ *
+ *  To include the functionality of parameter_handler into your C++ codes, add the line <BR>
+ *  <CODE>
+ *  \#include "parameter_handler.hpp" <BR>
+ *  </CODE>
+ *  to your code. For compiling (not binding), you also have to tell the compiler where it 
+ *  will find the header file include/parameter_handler.hpp. For instance, to compile a program 
+ *  main.cpp you can use the command <BR> 
+ *  <CODE>
+ *  g++ -c -I/path/to/parameter_handler.hpp main.cpp <BR>
+ *  </CODE>
+ *  For binding (linking) your program, the linker has to know where it will find the 
+ *  library bin/libHOSTNAME.parameter_handler.a file and how it is called. In the above example, 
+ *  you could call <BR>
+ *  <CODE>
+ *  g++ -o main -L/path/to/parameter_handler.a -lHOSTNAME.parameter_handler main.o <BR>
+ *  </CODE>
+ *  where HOSTNAME defines your computer's name (this allows you to use the same directories 
+ *  on several computers with different architecture, which happens if you work with a 
+ *  remote home directory that is shared on different computers). <BR>
+ *  Alternatively, you can add the path for the header and the library to your system 
+ *  path variables, for instance using your <CODE>.bashrc</CODE> file. 
+ *
+ *  \section example_sec Examples
+ *
+ *  Two example programs can be found in the examples/c++ directory. They demonstrate how to 
+ *  use the library in a minimalistic way (minimal_example.cpp) or with all functionality 
+ *  (example.cpp). 
+ *
+ *  \section notes_sec Notes
+ * 
+ *  To exclude information about the private members of classes into this
+ *  documentation, please set <CODE>EXTRACT_PRIVATE</CODE> to <CODE>NO</CODE> in the Doxyfile. 
+ * 
+ *  \section contribution_sec Contribution and Copyright
+ * 
+ *  Maintainers of this work are 
+ *  - Andreas Härtel - <https://andreashaertel.anno1982.de/>
+ *  - Moritz Bültmann - <moritz.bueltmann@gmx.de>
+ *
+ *  If you want to contribute, any pull requests or suggestions are welcome at 
+ *  <https://github.com/andreashaertel/parameter_handler> or via e-mail to one of the maintainers. 
+ * 
+ *  This work is licensed under multiple licences. Because keeping this section
+ *  up-to-date is challenging, here is a brief summary as of August 2021:
+ *  -  All original source code is licensed under either LGPL-3.0-or-later or GPL-3.0-or-later.
+ *  - All documentation is licensed under CC-BY-SA-4.0.
+ *  - Some configuration and data files are licensed under CC0-1.0.
+ *  For more accurate information, please check the individual files.
+ * 
+ * 
+ */
+

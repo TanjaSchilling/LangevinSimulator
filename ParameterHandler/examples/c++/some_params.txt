@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2021 Andreas Härtel <http://andreashaertel.anno1982.de/>
+# SPDX-License-Identifier: CC0-1.0
+# SPDX-PackageName: parameter_handler
+# SPDX-PackageHomePage: https://github.com/andreashaertel/parameter_handler
+
+# This is a parameter file
+# 
+# You will see that the parameter "some_name" will onle be "Andreas". 
+
+mode 4
+size 9.42
+some_name Andreas Haertel
+
