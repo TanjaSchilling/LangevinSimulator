@@ -303,7 +303,7 @@ Please have a look at `MyParentFolder/LangevinSimulator/utilities` for some addi
 
 ## Trouble shooting
 
-In the unfortunate case that an error occurs, please send a bug report to <BUGREPORT@EMAIL>. 
+In the unfortunate case that an error occurs, please send a bug report to <christoph.widder[at]merkur.uni-freiburg.de>. 
 You may want to try the debug builds in `MyParentFolder/LangevinSimulator/bin/Debug`.
 When using the python interface, simply set the executable paths in your `run.py` accordingly.
 The debug builds support debugging symbols and additional error-handling from within TensorUtils.
