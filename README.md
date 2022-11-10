@@ -13,8 +13,11 @@ Citation entries as `RIS` and `BibTeX` are given in `MyParentFolder/LangevinSimu
 The software LangevinSimulator is based on the following articles:
 - 2022: C. Widder, F. Glatzel & T. Schilling
 
-	Generalized Langevin dynamics simulation with non-stationary memory kernels: How to make noise  ([article]() [preprint](https://arxiv.org/abs/2209.11021))
+	Generalized Langevin dynamics simulation with non-stationary memory kernels: How to make noise  ([preprint](https://arxiv.org/abs/2209.11021))
+	
+- 2020: H. Meyer, S. Wolf, G. Stock, T. Schilling
 
+	A numerical procedure to evaluate memory effects in non‐equilibrium coarse‐grained models ([article](https://doi.org/10.1002/adts.202000197))
 
 
 ## Introduction
