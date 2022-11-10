@@ -18,6 +18,10 @@ The software LangevinSimulator is based on the following articles:
 - 2020: H. Meyer, S. Wolf, G. Stock, T. Schilling
 
 	A numerical procedure to evaluate memory effects in non‐equilibrium coarse‐grained models ([article](https://doi.org/10.1002/adts.202000197))
+	
+- This code can be cited via the following DOI
+
+[![DOI](https://zenodo.org/badge/563734586.svg)](https://zenodo.org/badge/latestdoi/563734586)
 
 
 ## Introduction
