@@ -1,0 +1,29 @@
+
+TY  - JOUR
+T1  - A Numerical Procedure to Evaluate Memory Effects in Non-Equilibrium Coarse-Grained Models
+AU  - Meyer, Hugues
+AU  - Wolf, Steffen
+AU  - Stock, Gerhard
+AU  - Schilling, Tanja
+Y1  - 2021/04/01
+PY  - 2021
+DA  - 2021/04/01
+N1  - https://doi.org/10.1002/adts.202000197
+DO  - https://doi.org/10.1002/adts.202000197
+T2  - Advanced Theory and Simulations
+JF  - Advanced Theory and Simulations
+JO  - Advanced Theory and Simulations
+JA  - Adv. Theory Simul.
+SP  - 2000197
+VL  - 4
+IS  - 4
+KW  - coarse graining
+KW  - ion dissociation
+KW  - memory effects
+PB  - John Wiley & Sons, Ltd
+SN  - 2513-0390
+M3  - https://doi.org/10.1002/adts.202000197
+UR  - https://doi.org/10.1002/adts.202000197
+Y2  - 2022/11/10
+N2  - Abstract When developing coarse-grained models of complex processes out of equilibrium, one encounters the non-stationary generalized Langevin equation. The most important feature of this equation is the presence of a non-stationary memory kernel. Here, a method is presented to infer this memory kernel from MD simulation data in non-equilibrium processes. The method provides an improvement of a previously published numerical scheme, the applicability of which is limited by a truncation problem. As an illustration, the method is applied to ion dissociation of NaCl in water, for which non-trivial dampened oscillations are observed in the memory kernel.
+ER  - 
