@@ -127,7 +127,8 @@ Open and run the CodeBlocks projects at `MyParentFolder/LangevinSimulator`:
 4) `main_simulator.cbp`
 
 The parameters are set in `MyParentFolder/LangevinSimulator/parameter.txt`, 
-see next subsection for details.
+see next subsection for details. 
+You can change the path to the parameter file in `Project -> Set programs' arguments... `.
 
 ### C++ Interface 
 
@@ -314,6 +315,24 @@ In the unfortunate case that an error occurs, please send a bug report to <chris
 You may want to try the debug builds in `MyParentFolder/LangevinSimulator/bin/Debug`.
 When using the python interface, simply set the executable paths in your `run.py` accordingly.
 The debug builds support debugging symbols and additional error-handling from within TensorUtils.
+
+### Singular matrices
+
+In some cases, you might get the following error message:
+```
+	gsl: lu.c:449: ERROR: matrix is singular
+```
+This error occurs, if the correlation matrix `E[A(t)A^T(t)]` is singular. 
+
+For vectorial observables, this will be the case, 
+if the phase space distribution is degenerate during the chosen time-interval.
+As a consequence, the Mori projection operator is ill defined.
+Hence, it is necessary to restrict the numerical evaluation to time-intervals, 
+where the phase space distribution is non-degenerate. 
+
+For scalar observables, it is necessary to ensure that the mean `E[A(t)A(t)]` is positve.
+A common scenario is the case, where the average of a scalar observable is zero at the beginning.
+In this case, the user might want start at a slightly larger initial time.
 
 ## Licenses
 
