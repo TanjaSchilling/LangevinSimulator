@@ -333,7 +333,7 @@ where the phase space distribution is non-degenerate.
 
 For scalar observables, it is necessary to ensure that the mean `E[A(t)A(t)]` is positve.
 A common scenario is the case, where the average of a scalar observable is zero at the beginning.
-In this case, the user might want start at a slightly larger initial time.
+In this case, the user might want to start at a slightly larger initial time.
 
 ## Licenses
 
