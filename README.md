@@ -84,6 +84,9 @@ You may execute the code using **CodeBlocks**, the built-in **C++ Interface** or
 A description of all available parameters is given in sec. **Parameters**. 
 
 Please ensure that the input trajectories are formatted properly. 
+Furthermore, it is assumed that the trajectories are smooth. 
+For a small number of noisy input trajectories, the memory kernel will be noisy as well.
+
 Example trajectories are located at `MyParentFolder/LangevinSimulator/TEST_DATA`.
 The first column contains the times and the following columns 
 contain the corresponding values for the observables.
