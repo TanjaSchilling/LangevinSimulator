@@ -322,7 +322,8 @@ In some cases, you might get the following error message:
 ```
 	gsl: lu.c:449: ERROR: matrix is singular
 ```
-This error occurs, if the correlation matrix `E[A(t)A^T(t)]` is singular. 
+This error occurs, if the correlation matrix `E[A(t)A^T(t)]` is singular, 
+where `A(t)` denotes the input trajectory and `E[]` is the ensemble average.
 
 For vectorial observables, this will be the case, 
 if the phase space distribution is degenerate during the chosen time-interval.
