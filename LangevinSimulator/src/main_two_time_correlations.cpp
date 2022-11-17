@@ -29,6 +29,8 @@ If not, see <https://www.gnu.org/licenses/>.
 #include<sstream>
 #include <cmath>
 
+#include <gsl/gsl_blas.h>
+
 #include"parameter_handler.hpp"
 #include"InputOutput.hpp"
 
@@ -168,24 +170,22 @@ int main(int argc, char** argv) {
     {
         cout << "Unable to read binary. Calculate correlation function." << endl;
 
-        size_t num_tot = num_ts*num_obs;
-        correlation.alloc({num_ts,num_obs,num_ts,num_obs});
-        double * result = &correlation[0];
+
+        gsl_matrix * in_buffer = gsl_matrix_alloc(num_files,num_ts*num_obs);
+
         traj *= sqrt(1.0/num_files);
-        double dummy;
-        for(size_t i=0; i<num_tot; i++)
-        {
-            for(size_t j=0; j<num_tot; j++)
-            {
-                dummy = 0.0;
-                for(size_t n=0; n<num_files; n++)
-                {
-                    dummy += traj[n*num_tot+i]*traj[n*num_tot+j];
-                }
-                *result = dummy;
-                result++;
-            }
-        }
+        traj >> *in_buffer->data;
+        traj.clear();
+
+        gsl_matrix * out_buffer = gsl_matrix_alloc(num_ts*num_obs,num_ts*num_obs);
+
+        gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, in_buffer, in_buffer, 0.0, out_buffer);
+        gsl_matrix_free(in_buffer);
+
+        correlation.alloc({num_ts,num_obs,num_ts,num_obs});
+        correlation << *out_buffer->data;
+        gsl_matrix_free(out_buffer);
+
         correlation.write("correlation.f64",out_folder);
         if(txt_out)
         {
