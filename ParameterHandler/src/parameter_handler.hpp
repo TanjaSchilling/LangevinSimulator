@@ -18,11 +18,12 @@
  *  This contains the definition of class specific exceptions and the
  *  definition of a struct flag.
  */
+#include <cstring>
+#include <exception>
 #include <iostream>
 #include <string>
-#include <vector>
-#include <exception>
 #include <utility>
+#include <vector>
 // _____________________________________________________________________________
 /** \brief ParameterHandler to manage flag and parameter handling.
  *

@@ -3,14 +3,15 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // SPDX-PackageName: parameter_handler
 // SPDX-PackageHomePage: https://github.com/andreashaertel/parameter_handler
-#include <regex>  // NOLINT
-#include <iostream>
-#include <fstream>
+#include "parameter_handler.hpp"
+#include <cstring>
 #include <ctime>
 #include <exception>
+#include <fstream>
+#include <iostream>
 #include <limits>
+#include <regex>  // NOLINT
 #include <utility>
-#include "parameter_handler.hpp"
 // _____________________________________________________________________________
 ParameterHandler::ParameterHandler(int argc, char **args) {
   // Set number of command line arguments
