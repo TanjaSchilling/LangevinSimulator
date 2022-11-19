@@ -335,7 +335,7 @@ Hence, it is necessary to restrict the numerical evaluation to time-intervals,
 where the phase space distribution is non-degenerate. 
 
 For scalar observables, it is necessary to ensure that the mean `E[A(t)A(t)]` is positve.
-A common scenario is the case, where the average of a scalar observable is zero at the beginning.
+A common scenario is the case, where the scalar observable and its variance is zero at the initial time <t_min>.
 In this case, the user might want to start at a slightly larger initial time.
 
 ## Licenses
