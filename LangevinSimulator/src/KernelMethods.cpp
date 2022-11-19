@@ -578,24 +578,36 @@ tensor<double,3> KernelMethods::getFluctuatingForce(
 
 void KernelMethods::writeCovarianceMatrix(tensor<double,3> &ff, string folder)
 {
-    size_t num_traj = ff.shape[0];
-    size_t n_max = ff.shape[1]*ff.shape[2];
+    size_t num_files = ff.shape[0];
+    size_t num_ts = ff.shape[1];
+    size_t num_obs = ff.shape[2];
+
+    tensor<double> average;
+    average = ff.contract({-1,2,3});
+    average *= 1.0/num_files;
+    average.write("ff_average.f64",folder);
 
     tensor<double> cov;
     cov = ff;
-
-    tensor<double> average;
-    average = cov.contract({-1,2,3});
-    average *= 1.0/num_traj;
-    average.write("ff_average.f64",folder);
-
-    for(size_t n=0; n<num_traj; n++)
+    for(size_t n=0; n<num_files; n++)
     {
         cov.substract(average, {n});
     }
-    cov.reshape({num_traj, n_max});
-    cov = cov.dot(cov, {-1,2}, {-1,3});
-    cov *= 1.0/(num_traj-1);
+
+    gsl_matrix * in_buffer = gsl_matrix_alloc(num_files,num_ts*num_obs);
+    cov *= sqrt(1.0/(num_files-1));
+    cov >> *in_buffer->data;
+    cov.clear();
+
+    gsl_matrix * out_buffer = gsl_matrix_alloc(num_ts*num_obs,num_ts*num_obs);
+
+    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, in_buffer, in_buffer, 0.0, out_buffer);
+    gsl_matrix_free(in_buffer);
+
+    cov.alloc({num_ts*num_obs,num_ts*num_obs});
+    cov << *out_buffer->data;
+    gsl_matrix_free(out_buffer);
+
     cov.write("cov.f64", folder);
 }
 
