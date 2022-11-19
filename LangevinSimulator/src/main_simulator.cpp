@@ -97,11 +97,14 @@ int main(int argc, char *argv[]) {
     tensor<double,1> times;
     times.read(path);
 
-	path = out_folder;
-	path /= "average_tau.f64";
-	cout << "Load mean inital value from: " << path << endl;
     tensor<double,1> average_tau;
-    average_tau.read(path);
+    if(shift)
+    {
+        path = out_folder;
+        path /= "average_tau.f64";
+        cout << "Load mean inital value from: " << path << endl;
+        average_tau.read(path);
+    }
 
     // set args
     double dt = times[1]-times[0];
