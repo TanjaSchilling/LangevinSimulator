@@ -23,7 +23,6 @@ The software LangevinSimulator is based on the following articles:
 
 [![DOI](https://zenodo.org/badge/563734586.svg)](https://zenodo.org/badge/latestdoi/563734586)
 
-
 ## Introduction
 
 LangevinSimulator offers methods to compute a data-driven coarse-grained model of Hamiltonian systems out of equilibrium. 
@@ -36,6 +35,7 @@ While the memory kernel and drift term are ensemble-averaged quantities, the flu
 
 The full documentation is located at `MyParentFolder/LangevinSimulator/doc/`.
 
+**Some changes are made. The documentation will be updated soon.**
 
 ## Build instructions
 
