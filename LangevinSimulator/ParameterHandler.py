@@ -57,7 +57,9 @@ class ParameterHandler:
                  corr_exe="./bin/Release/main_correlation",
                  kernel_exe="./bin/Release/main_kernel",
                  ff_exe="./bin/Release/main_fluctuating_forces",
-                 sim_exe="./bin/Release/main_simulator"):
+                 sim_exe="./bin/Release/main_simulator",
+                 mollifier_width=10,
+                 gaussian_init_val=False):
         self.out_folder = out_folder
         self.in_folder = in_folder
         self.in_prefix = in_prefix
@@ -74,6 +76,8 @@ class ParameterHandler:
         self.kernel_exe = kernel_exe
         self.ff_exe = ff_exe
         self.sim_exe = sim_exe
+        self.mollifier_width = mollifier_width
+        self.gaussian_init_val = gaussian_init_val
 
     def get_parameter_file(self):
         parameter_file = """\
@@ -87,7 +91,9 @@ t_max {t_max}
 increment {increment}
 shift {shift}
 num_sim {num_sim}
-txt_out {txt_out}""".format(
+txt_out {txt_out}
+mollifier_width {mollifier_width}
+gaussian_init_val {gaussian_init_val}""".format(
             out_folder=self.out_folder,
             in_folder=self.in_folder,
             in_prefix=self.in_prefix,
@@ -98,7 +104,9 @@ txt_out {txt_out}""".format(
             increment=self.increment,
             shift=self.shift,
             num_sim=self.num_sim,
-            txt_out=self.txt_out)
+            txt_out=self.txt_out,
+            mollifier_width=self.mollifier_width,
+            gaussian_init_val=self.gaussian_init_val)
         return parameter_file
 
     def write_parameter_file(self, parameter_filename):

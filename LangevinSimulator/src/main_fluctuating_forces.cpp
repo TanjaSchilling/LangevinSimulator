@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
 
 	string out_folder;
 	bool txt_out;
+	bool gaussian_init_val;
 
 	ParameterHandler cmdtool {argc, argv};
 	cmdtool.process_flag_help();
@@ -47,66 +48,73 @@ int main(int argc, char *argv[]) {
 		out_folder = cmdtool.get_string("out_folder", "./OUT");
         cmdtool.add_usage("txt_out: Boolean. If true, writes output files in text format. Default: true");
         txt_out = cmdtool.get_bool("txt_out", true);
+        cmdtool.add_usage("gaussian_init_val: Boolean. If true, the initial values will be drawn from a Gaussian. \
+                          Else, the original initial values will be used for numerical simulations. Default: false");
+        gaussian_init_val = cmdtool.get_bool("gaussian_init_val", false);
 	} catch (const ParameterHandler::BadParamException &ex) {
 		cmdtool.show_usage();
 		throw ex;
 	}
 
-	filesystem::path path;
+	cout << "PARAMETERS: " << endl;
+	cout << "out_folder" << '\t'<< out_folder << endl;
+	cout << "txt_out" << '\t'<< txt_out << endl;
+	cout << "gaussian_init_val" << '\t'<< gaussian_init_val << endl;
+
+	filesystem::path out_path = out_folder;
     tensor<double,3> fluctuating_force;
 
     try
     {
-        path = out_folder;
-        path /= "ff.f64";
-        cout << "Search fluctuating forces: " << path << endl;
-        fluctuating_force.read(path);
+        cout << "Search fluctuating forces: " << out_path/"ff.f64" << endl;
+        fluctuating_force.read(out_path/"ff.f64");
     }
     catch(exception &ex)
     {
         cout << "Unable to read binary. Calculate fluctuating forces." << endl;
 
-        path = out_folder;
-        path /= "kernel.f64";
-        cout << "Load memory kernel from: " << path << endl;
+        cout << "Load memory kernel from: " << out_path/"kernel.f64" << endl;
         tensor<double,4> kernel;
-        kernel.read(path);
+        kernel.read(out_path/"kernel.f64");
 
-        path = out_folder;
-        path /= "traj.f64";
-        cout << "Load trajectories from: " << path << endl;
+        cout << "Load trajectories from: " << out_path/"traj.f64" << endl;
         tensor<double,3> trajectories;
-        trajectories.read(path);
+        trajectories.read(out_path/"traj.f64");
 
-        path = out_folder;
-        path /= "times.f64";
-        cout << "Load times from: " << path << endl;
+        cout << "Load times from: " << out_path/"times.f64" << endl;
         tensor<double,1> times;
-        times.read(path);
+        times.read(out_path/"times.f64");
 
         // set args
-        size_t num_files = trajectories.shape[0];
+        size_t num_traj = trajectories.shape[0];
         size_t num_ts = trajectories.shape[1];
         size_t num_obs = trajectories.shape[2];
-        cout << "Loaded "<< num_files << " trajectories with " << num_ts << " timesteps and " << num_obs << " observables." << endl;
+        cout << "Loaded "<< num_traj << " trajectories with " << num_ts << " timesteps and " << num_obs << " observables." << endl;
 
         // calculate fluctuating forces
-        fluctuating_force = KernelMethods::getFluctuatingForce(kernel, trajectories, times, out_folder, txt_out);
-        KernelMethods::writeCovarianceMatrix(fluctuating_force, out_folder);
+        fluctuating_force = KernelMethods::getFluctuatingForce(kernel, trajectories, times, out_path, txt_out);
 
-        // write fluctuating forces
-        //InputOutput::writeFluctuatingForces(fluctuating_force, times, out_folder);
-        fluctuating_force.write("ff.f64",out_folder);
+        if(!gaussian_init_val)
+        {
+            cout << "Compute covariance matrix of fluctuating forces." << endl;
+            KernelMethods::writeCovarianceMatrix(fluctuating_force, out_path);
+        }
+        else
+        {
+            cout << "Compute covariance matrix of initial values and fluctuating forces." << endl;
+            KernelMethods::writeExtendedCovarianceMatrix(trajectories, fluctuating_force, out_path);
+        }
+
+        cout << "Write fluctuating forces." << endl;
+        fluctuating_force.write("ff.f64",out_path);
         if(txt_out)
         {
-            path=out_folder;
-            path/="FF";
-            filesystem::create_directories(path);
+            filesystem::create_directories(out_path/"FF");
             tensor<double,2> ff({fluctuating_force.shape[1],fluctuating_force.shape[2]});
             for(size_t n=0; n<fluctuating_force.shape[0]; n++)
             {
                 ff << fluctuating_force[n];
-                InputOutput::write(times,ff,path/("ff_"+to_string(n)+".txt"));
+                InputOutput::write(times,ff,(out_path/"FF")/("ff_"+to_string(n)+".txt"));
             }
         }
     }

@@ -3,9 +3,11 @@ in_folder TEST_DATA
 in_prefix dipoleMoment
 file_range 0-99
 num_obs 2
-t_min 50
-t_max 90
-increment 5
-shift 1
-num_sim 1000
+t_min 20
+t_max 60
+increment 1
+shift 0
+num_sim 5000
 txt_out True
+mollifier_width 0
+gaussian_init_val True

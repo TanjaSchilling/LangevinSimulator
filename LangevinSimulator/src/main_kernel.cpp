@@ -38,10 +38,6 @@ int main(int argc, char** argv) {
 
     cout << "BEGIN: main_kernel" << endl;
 
-	double dt;
-	size_t num_ts;  // Number of time steps
-	size_t num_obs;  // Number of observables
-	size_t num_tot;  // Number of time steps times number of observables
 	string out_folder;
 	bool txt_out;
 
@@ -49,8 +45,6 @@ int main(int argc, char** argv) {
 	cmdtool.process_flag_help();
 	cmdtool.process_parameters();
 	try{
-		cmdtool.add_usage("num_obs: Number of observables.");
-		num_obs = cmdtool.get_int("num_obs", 0);
 		cmdtool.add_usage("out_folder: Default: ./OUT");
 		out_folder = cmdtool.get_string("out_folder", "./OUT");
         cmdtool.add_usage("txt_out: Boolean. If true, writes output files in text format. Default: true");
@@ -60,41 +54,38 @@ int main(int argc, char** argv) {
 		throw ex;
 	}
 
-	filesystem::path path;
+	cout << "PARAMETERS: " << endl;
+	cout << "out_folder" << '\t'<< out_folder << endl;
+	cout << "txt_out" << '\t'<< txt_out << endl;
+
+	filesystem::path out_path = out_folder;
     TensorUtils::tensor<double,4> buffer;
 
     try
     {
-        path = out_folder;
-        path /= "kernel.f64";
-        cout << "Search memory kernel: " << path << endl;
-        buffer.read(path);
+        cout << "Search memory kernel: " << out_path/"kernel.f64" << endl;
+        buffer.read(out_path/"kernel.f64");
     }
     catch(exception &ex)
     {
         cout << "Unable to read binary. Calculate memory kernel." << endl;
 
-        path = out_folder;
-        path /= "correlation.f64";
-        cout << "Load correlation from: " << path << endl;
         TensorUtils::tensor<double,4> correlation;
-        correlation.read(path);
+        cout << "Load correlation from: " << out_path/"correlation.f64" << endl;
+        correlation.read(out_path/"correlation.f64");
 
-        path = out_folder;
-        path /= "times.f64";
-        cout << "Load times from: " << path << endl;
         TensorUtils::tensor<double,1> times;
-        times.read(path);
+        cout << "Load times from: " << out_path/"times.f64" << endl;
+        times.read(out_path/"times.f64");
 
-        num_ts = correlation.shape[0];
-        num_obs = correlation.shape[1];
-        num_tot = num_ts * num_obs;
-        dt = (times[1]-times[0]);
+        size_t num_ts = correlation.shape[0];
+        size_t num_obs = correlation.shape[1];
+        size_t num_tot = num_ts * num_obs;
+        double dt = (times[1]-times[0]);
 
         std::cout << "#\tnum_ts: " << num_ts << "\tnum_obs: " << num_obs << "\n";
         std::cout << "#\tdt: " << dt << "\n";
 
-        // Until last step, K is used as auxiliary matrix for calculations
         gsl_matrix* kernel = gsl_matrix_alloc(num_tot, num_tot);
         gsl_matrix* corr = gsl_matrix_alloc(num_tot, num_tot);
         correlation >> *corr->data;
@@ -105,13 +96,12 @@ int main(int argc, char** argv) {
         buffer.alloc({num_ts,num_obs,num_ts,num_obs});
         buffer << *kernel->data;
         gsl_matrix_free(kernel);
+        cout << "Write memory kernel: " << out_path/"kernel.f64" << endl;
         if(txt_out)
         {
-            path = out_folder;
-            path /= "kernel.txt";
-            InputOutput::write(times,buffer,path);
+            InputOutput::write(times,buffer,out_path/"kernel.txt");
         }
-        buffer.transpose({0,2,1,3}).write("kernel.f64",out_folder);
+        buffer.transpose({0,2,1,3}).write("kernel.f64",out_path);
         buffer.clear();
     }
 

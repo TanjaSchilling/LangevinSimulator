@@ -34,6 +34,8 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 namespace KernelMethods {
 
+    TensorUtils::tensor<double,4> calcLowerBlockTriangularInverse(TensorUtils::tensor<double,4> &src);
+
     //! \private
 	void calcDiagInverts(
 		gsl_matrix const* corr,
@@ -126,9 +128,11 @@ namespace KernelMethods {
         \brief Computes the covariance matrix of the fluctuating forces as required from
         \ref RandomForceGenerator.
 
-        The covariance matrix is written to `folder/cov.64`.
+        The covariance matrix is written to `out_folder/cov.64`.
     */
-    void writeCovarianceMatrix(TensorUtils::tensor<double,3> &ff, std::string folder);
+    void writeCovarianceMatrix(TensorUtils::tensor<double,3> &ff, std::string out_folder);
+
+    void writeExtendedCovarianceMatrix(TensorUtils::tensor<double,3> &traj, TensorUtils::tensor<double,3> &ff, std::string out_folder);
 }
 
 #endif  // KERNEL_KERNELMETHODS_H_

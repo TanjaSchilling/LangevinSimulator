@@ -36,6 +36,8 @@ If not, see <https://www.gnu.org/licenses/>.
 
 #include "TensorUtils.hpp"
 
+#include "FourierTransforms.hpp"
+
 using namespace std;
 
 int main(int argc, char** argv) {
@@ -52,6 +54,7 @@ int main(int argc, char** argv) {
 	string out_folder;
 	bool shift;
 	bool txt_out;
+	size_t mollifier_width;
 
 	ParameterHandler cmdtool {argc, argv};
 	cmdtool.process_flag_help();
@@ -67,6 +70,8 @@ int main(int argc, char** argv) {
 		cmdtool.add_usage("out_folder: Default: ./OUT");
 		cmdtool.add_usage("shift: Boolean. If true, the average initial value is subtracted. No effect, if false. Default: true");
 		cmdtool.add_usage("txt_out: Boolean. If true, writes output files in text format. Default: true");
+		cmdtool.add_usage("mollifier_width: unsigned integer. Total width of the mollifier is 2*<mollifier_width> time-steps. \
+                    No effect, if <mollifier_width> is set to zero. If <mollifier_width> is positive, all input trajectories will be mollified.");
 		// TODO parameters for choosing a certain file set
 
 		in_folder = cmdtool.get_string("in_folder","./TEST_DATA");
@@ -79,12 +84,26 @@ int main(int argc, char** argv) {
 		out_folder = cmdtool.get_string("out_folder", "./OUT");
 		shift = cmdtool.get_bool("shift", true);
 		txt_out = cmdtool.get_bool("txt_out", true);
+		mollifier_width = cmdtool.get_int("mollifier_width", 0);
 	} catch (const ParameterHandler::BadParamException &ex) {
 		cmdtool.show_usage();
 		throw ex;
 	}
 
-	filesystem::path path;
+	cout << "PARAMETERS: " << endl;
+	cout << "in_folder" << '\t'<< in_folder << endl;
+//	cout << "in_prefix" << '\t'<< in_prefix << endl;
+//	cout << "increment" << '\t'<< increment << endl;
+//	cout << "t_min" << '\t'<< t_min << endl;
+//	cout << "t_max" << '\t'<< t_max << endl;
+//	cout << "file_range" << '\t'<< file_range << endl;
+	cout << "out_folder" << '\t'<< out_folder << endl;
+	cout << "shift" << '\t'<< shift << endl;
+	cout << "txt_out" << '\t'<< txt_out << endl;
+	cout << "mollifier_width" << '\t'<< mollifier_width << endl;
+
+	filesystem::path out_path = out_folder;
+	filesystem::path in_path = in_folder;
 
     /**
         TRAJECTORIES AND TIMES
@@ -94,42 +113,52 @@ int main(int argc, char** argv) {
 
     try
     {
-        path = out_folder;
-        path /= "traj.f64";
-        cout << "Search trajectories: " << path << endl;
-        traj.read(path);
+        cout << "Search trajectories: " << out_path/"traj.f64" << endl;
+        traj.read(out_path/"traj.f64");
 
-        path = out_folder;
-        path /= "times.f64";
-        cout << "Search times: " << path << endl;
-        times.read(path);
+        cout << "Search times: " << out_path/"times.f64" << endl;
+        times.read(out_path/"times.f64");
     }
     catch(exception &ex)
     {
-        cout << "Unable to read binaries. Read trajectories from text files." << endl;
-        vector<string> dataFiles = InputOutput::getDataFilenames(file_range, in_folder, in_prefix);
-        if(dataFiles.size()==0) {
-            cout << "Unable to load input files!. -> return." << endl;
-            return 0;
+        try
+        {
+            cout << "Search trajectories: " << in_path/"traj.f64" << endl;
+            traj.read(in_path/"traj.f64");
+
+            cout << "Search times: " << in_path/"times.f64" << endl;
+            times.read(in_path/"times.f64");
         }
-        // read
-        traj = InputOutput::readTrajectories(dataFiles,t_min,t_max,increment,num_obs);
-        times = InputOutput::popTimes(traj);
+        catch(exception &ex)
+        {
+            cout << "Unable to read binaries. Read trajectories from text files." << endl;
+            vector<string> dataFiles = InputOutput::getDataFilenames(file_range, in_path, in_prefix);
+            if(dataFiles.size()==0) {
+                cout << "Unable to load input files!. -> return." << endl;
+                return 0;
+            }
+            // read
+            traj = InputOutput::readTrajectories(dataFiles,t_min,t_max,increment,num_obs);
+            times = InputOutput::popTimes(traj);
+        }
+
         if(shift)
         {
-            TensorUtils::tensor<double,1> average_tau({num_obs},0.0);
+            cout << "Shift trajectories." << endl;
+            TensorUtils::tensor<double,1> mean_initial_value({num_obs},0.0);
             for(size_t n=0; n<traj.shape[0]; n++)
             {
                 for(size_t o=0; o<num_obs; o++)
                 {
-                    average_tau[o] += traj(n,0,o);
+                    mean_initial_value[o] += traj(n,0,o);
                 }
             }
-            average_tau /= traj.shape[0];
-            average_tau.write("average_tau.f64",out_folder);
+            mean_initial_value /= traj.shape[0];
+            cout << "Write mean initial values: " << out_path/"mean_initial_value.f64" << endl;
+            mean_initial_value.write("mean_initial_value.f64",out_path);
             if(txt_out)
             {
-                average_tau.write("average_tau.txt",out_folder);
+                mean_initial_value.write("mean_initial_value.txt",out_path);
             }
             for(size_t n=0; n<traj.shape[0]; n++)
             {
@@ -137,21 +166,87 @@ int main(int argc, char** argv) {
                 {
                     for(size_t o=0; o<num_obs; o++)
                     {
-                        traj(n,t,o) -= average_tau[o];
+                        traj(n,t,o) -= mean_initial_value[o];
                     }
                 }
             }
         }
-        traj.write("traj.f64",out_folder);
-        times.write("times.f64",out_folder);
+        if(mollifier_width>1)
+        {
+            cout << "Mollify trajectories." << endl;
+            size_t num_traj = traj.shape[0];
+            size_t num_ts = traj.shape[1];
+            size_t num_obs = traj.shape[2];
+
+            size_t num_pad = num_ts + 2*mollifier_width+1 -1;
+            while(num_pad&(num_pad-1)) // num_pad is not a power of 2!
+            {
+                num_pad++;
+            }
+
+            TensorUtils::tensor<double> traj_pad({num_traj,num_obs,num_pad},0.0);
+            for(size_t n=0; n<num_traj; n++)
+            {
+                for(size_t o=0;o<num_obs;o++)
+                {
+                    for(size_t t=0;t<num_ts;t++)
+                    {
+                        traj_pad(n,o,t) = traj(n,t,o);
+                    }
+                }
+            }
+            traj.clear();
+
+            TensorUtils::tensor<double> mollifier({num_pad},0.0);
+            double sum = 0.0;
+            for(size_t t=1; t<2*mollifier_width; t++)
+            {
+                mollifier[t] = exp( 1/(pow(double(t)/mollifier_width-1,2)-1) );
+                sum += mollifier[t];
+            }
+            mollifier *= 2.0/(num_pad*sum);
+
+            double * lookup_table = new double[num_pad];
+            FFTBW::FourierTransforms<double>::initLookUp(lookup_table,num_pad);
+            FFTBW::FourierTransforms<double>::fftReal(&mollifier[0],num_pad,+1,lookup_table,false);
+            for(size_t n=0; n<num_traj; n++)
+            {
+                for(size_t o=0;o<num_obs;o++)
+                {
+                    FFTBW::FourierTransforms<double>::convolve(&traj_pad(n,o),&mollifier[0],num_pad,lookup_table,false);
+                }
+            }
+            delete[] lookup_table;
+
+            traj.alloc({num_traj,num_ts-2*mollifier_width,num_obs});
+            for(size_t n=0; n<num_traj; n++)
+            {
+                for(size_t t=0;t<num_ts-2*mollifier_width;t++)
+                {
+                    for(size_t o=0;o<num_obs;o++)
+                    {
+                        traj(n,t,o) = traj_pad(n,o,t+2*mollifier_width);
+                    }
+                }
+            }
+            traj_pad.clear();
+            TensorUtils::tensor<double> new_times({num_ts-2*mollifier_width});
+            new_times << times[mollifier_width];
+            times = new_times;
+            new_times.clear();
+        }
+        cout << "Write trajectories: " << out_path/"traj.f64" << endl;
+        traj.write("traj.f64",out_path);
+        cout << "Write times: " << out_path/"times.f64" << endl;
+        times.write("times.f64",out_path);
     }
 
     // set dimensions
-    size_t num_files = traj.shape[0];
+    size_t num_traj = traj.shape[0];
     size_t num_ts = traj.shape[1];
     num_obs = traj.shape[2];
 
-	cout << "# Found " << num_files << " trajectories with " << num_ts << " time-steps and " << num_obs << " observables." << endl;
+	cout << "# Found " << num_traj << " trajectories with " << num_ts << " time-steps and " << num_obs << " observables." << endl;
 
     /**
         CORRELATION FUNCTION
@@ -161,19 +256,16 @@ int main(int argc, char** argv) {
 
     try
     {
-        path = out_folder;
-        path /= "correlation.f64";
-        cout << "Search correlation function: " << path << endl;
-        correlation.read(path);
+        cout << "Search correlation function: " << out_path/"correlation.f64" << endl;
+        correlation.read(out_path/"correlation.f64");
     }
     catch(exception &ex)
     {
         cout << "Unable to read binary. Calculate correlation function." << endl;
 
+        gsl_matrix * in_buffer = gsl_matrix_alloc(num_traj,num_ts*num_obs);
 
-        gsl_matrix * in_buffer = gsl_matrix_alloc(num_files,num_ts*num_obs);
-
-        traj *= sqrt(1.0/num_files);
+        traj *= sqrt(1.0/num_traj);
         traj >> *in_buffer->data;
         traj.clear();
 
@@ -186,12 +278,11 @@ int main(int argc, char** argv) {
         correlation << *out_buffer->data;
         gsl_matrix_free(out_buffer);
 
-        correlation.write("correlation.f64",out_folder);
+        cout << "Write correlation function: " << out_path/"correlation.f64" << endl;
+        correlation.write("correlation.f64",out_path);
         if(txt_out)
         {
-            path = out_folder;
-            path /= "correlation.txt";
-            InputOutput::write(times,correlation,path);
+            InputOutput::write(times,correlation,out_path/"correlation.txt");
         }
     }
 

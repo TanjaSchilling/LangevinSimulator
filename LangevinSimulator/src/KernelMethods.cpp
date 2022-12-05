@@ -32,6 +32,68 @@ If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 using namespace TensorUtils;
 
+tensor<double,4> KernelMethods::calcLowerBlockTriangularInverse(TensorUtils::tensor<double,4> &src)
+{
+    size_t num_ts = src.shape[0];
+    size_t num_obs = src.shape[1];
+    tensor<double,3> diag_inverse({num_ts,num_obs,num_obs});
+    for(size_t t=0;t<num_ts;t++)
+    {
+        for(size_t i=0;i<num_obs;i++)
+        {
+            for(size_t j=0;j<num_obs;j++)
+            {
+                diag_inverse(t,i,j) = src(t,i,t,j);
+            }
+        }
+    }
+    diag_inverse = matInverse(diag_inverse);
+    tensor<double,4> inverse({num_ts,num_ts,num_obs,num_obs},0.0);
+    for(size_t t=0;t<num_ts;t++)
+    {
+        for(size_t i=0;i<num_obs;i++)
+        {
+            for(size_t j=0;j<num_obs;j++)
+            {
+                inverse(t,t,i,j) = diag_inverse(t,i,j);
+            }
+        }
+    }
+    double dummy;
+    gsl_matrix * out = gsl_matrix_alloc(num_obs,num_obs);
+    for(size_t s=0;s<num_ts;s++)
+    {
+        for(size_t t=s+1;t<num_ts;t++)
+        {
+            gsl_matrix * lhs = gsl_matrix_alloc(num_obs,num_obs*(t-s));
+            gsl_matrix * rhs = gsl_matrix_alloc(num_obs*(t-s),num_obs);
+            for(size_t i=0;i<num_obs;i++)
+            {
+                memcpy( (lhs->data)+i*(t-s)*num_obs,&src(t,i,s),(t-s)*num_obs*sizeof(double));
+            }
+            memcpy(rhs->data,&inverse(s,s),num_obs*num_obs*(t-s)*sizeof(double));
+            gsl_blas_dgemm(CblasNoTrans,CblasNoTrans,-1.0,lhs,rhs,0.0,out);
+            gsl_matrix_free(lhs);
+            gsl_matrix_free(rhs);
+            for(size_t i=0;i<num_obs;i++)
+            {
+                for(size_t j=0;j<num_obs;j++)
+                {
+                    dummy = 0.0;
+                    for(size_t k=0;k<num_obs;k++)
+                    {
+                        dummy += diag_inverse(t,i,k)*gsl_matrix_get(out,k,j);
+                    }
+                    inverse(s,t,i,j) = dummy;
+                }
+            }
+        }
+    }
+    gsl_matrix_free(out);
+    inverse = inverse.transpose({1,2,0,3});
+    return inverse;
+}
+
 void KernelMethods::calcDiagInverts(
 	gsl_matrix const* corr,
 	gsl_matrix **diag_inverts)
@@ -302,10 +364,7 @@ void KernelMethods::calcJ(
 	int const num_obs,
 	double const dt)
 {
-	gsl_permutation *permutation = gsl_permutation_alloc(num_ts * num_obs);
-	int signum;
 	int i;
-
 	gsl_matrix_scale(S0, dt);
 	KernelMethods::splitIntoTriangular(S0, num_ts, num_obs, temp1, temp2, true);
 	// Add one to diagonal elements
@@ -313,10 +372,23 @@ void KernelMethods::calcJ(
 		gsl_matrix_set(temp1, i, i, gsl_matrix_get(temp1, i, i) + 1.0);
 		gsl_matrix_set(temp2, i, i, gsl_matrix_get(temp2, i, i) + 1.0);
 	}
-	gsl_linalg_LU_decomp(temp1, permutation, &signum);
-	gsl_linalg_LU_invert(temp1, permutation, J);  // J is now S_lower!!!
-	gsl_linalg_LU_decomp(temp2, permutation, &signum);
-	gsl_linalg_LU_invert(temp2, permutation, temp1);  // temp1 is now S_upper!!!
+
+	if(num_obs>1)
+    {
+        tensor<double,4> buffer({size_t(num_ts),size_t(num_obs),size_t(num_ts),size_t(num_obs)});
+        buffer << *temp1->data;
+        calcLowerBlockTriangularInverse(buffer) >> *J->data;   // J is now S_lower!!!
+        buffer << *temp2->data;
+        buffer = buffer.transpose({2,3,0,1});
+        calcLowerBlockTriangularInverse(buffer).transpose({2,3,0,1}) >> *temp1->data;   // temp1 is now S_upper!!!
+    }
+    else
+    {
+        gsl_matrix_set_identity(J);
+        gsl_blas_dtrsm(CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit, 1.0, temp1, J);
+        gsl_matrix_set_identity(temp1);
+        gsl_blas_dtrsm(CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, temp2, temp1);
+    }
 
 	KernelMethods::splitIntoTriangular(j, num_ts, num_obs, S0, temp2, false);  // S0 is now j_lower, temp2 is now j_upper!!!
 
@@ -329,7 +401,6 @@ void KernelMethods::calcJ(
 
 	gsl_matrix_add(J, j);  // J is now J!!!
 
-	gsl_permutation_free(permutation);
 };
 
 
@@ -506,7 +577,7 @@ tensor<double,3> KernelMethods::getFluctuatingForce(
     drift = buffer2; // drift = < dotA otimes A > * < A otimes A > ^-1 (t)
     buffer.clear();
     buffer2.clear();
-
+    cout << "Write drift term: " << out_folder+"/"+"drift.f64" << endl;
     drift.write("drift.f64",out_folder);
     if(txt_out)
     {
@@ -576,38 +647,88 @@ tensor<double,3> KernelMethods::getFluctuatingForce(
     return diff_traj;
 }
 
-void KernelMethods::writeCovarianceMatrix(tensor<double,3> &ff, string folder)
+void KernelMethods::writeCovarianceMatrix(tensor<double,3> &ff, string out_folder)
 {
-    size_t num_files = ff.shape[0];
+    size_t num_traj = ff.shape[0];
     size_t num_ts = ff.shape[1];
     size_t num_obs = ff.shape[2];
 
-    tensor<double> average;
-    average = ff.contract({-1,2,3});
-    average *= 1.0/num_files;
-    average.write("ff_average.f64",folder);
+    tensor<double> ff_average;
+    ff_average = ff.contract({-1,2,3});
+    ff_average *= 1.0/num_traj;
+    cout << "Write mean values of fluctuating forces: " << out_folder+"/"+"ff_average.f64" << endl;
+    ff_average.write("ff_average.f64",out_folder);
 
-    tensor<double> cov;
-    cov = ff;
-    for(size_t n=0; n<num_files; n++)
+    tensor<double> ff_cov;
+    ff_cov = ff;
+    for(size_t n=0; n<num_traj; n++)
     {
-        cov.substract(average, {n});
+        ff_cov.substract(ff_average, {n});
     }
 
-    gsl_matrix * in_buffer = gsl_matrix_alloc(num_files,num_ts*num_obs);
-    cov *= sqrt(1.0/(num_files-1));
-    cov >> *in_buffer->data;
-    cov.clear();
+    gsl_matrix * in_buffer = gsl_matrix_alloc(num_traj,num_ts*num_obs);
+    ff_cov *= sqrt(1.0/(num_traj-1));
+    ff_cov >> *in_buffer->data;
+    ff_cov.clear();
 
     gsl_matrix * out_buffer = gsl_matrix_alloc(num_ts*num_obs,num_ts*num_obs);
 
     gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, in_buffer, in_buffer, 0.0, out_buffer);
     gsl_matrix_free(in_buffer);
 
-    cov.alloc({num_ts*num_obs,num_ts*num_obs});
-    cov << *out_buffer->data;
+    ff_cov.alloc({num_ts,num_obs,num_ts,num_obs});
+    ff_cov << *out_buffer->data;
     gsl_matrix_free(out_buffer);
+    cout << "Write covariance matrix of fluctuating forces: " << out_folder+"/"+"ff_cov.f64" << endl;
+    ff_cov.write("ff_cov.f64", out_folder);
+}
 
-    cov.write("cov.f64", folder);
+void KernelMethods::writeExtendedCovarianceMatrix(TensorUtils::tensor<double,3> &traj, TensorUtils::tensor<double,3> &ff, std::string out_folder)
+{
+    size_t num_traj = ff.shape[0];
+    size_t num_ts = ff.shape[1];
+    size_t num_obs = ff.shape[2];
+
+    num_ts++;
+
+    tensor<double> ff_cov({num_traj,num_ts,num_obs});
+    for(size_t n=0; n<num_traj; n++)
+    {
+        for(size_t o=0; o<num_obs; o++)
+        {
+            ff_cov(n,0,o) = traj(n,0,o);
+            for(size_t t=1; t<num_ts; t++)
+            {
+                ff_cov(n,t,o) = ff(n,t-1,o);
+            }
+        }
+    }
+
+    tensor<double> ff_average;
+    ff_average = ff_cov.contract({-1,2,3});
+    ff_average *= 1.0/num_traj;
+    cout << "Write mean of initial values and fluctuating forces: " << out_folder+"/"+"ff_average.f64" << endl;
+    ff_average.write("ff_average.f64",out_folder);
+
+    for(size_t n=0; n<num_traj; n++)
+    {
+        ff_cov.substract(ff_average, {n});
+    }
+
+    gsl_matrix * in_buffer = gsl_matrix_alloc(num_traj,num_ts*num_obs);
+    ff_cov *= sqrt(1.0/(num_traj-1));
+    ff_cov >> *in_buffer->data;
+    ff_cov.clear();
+
+    gsl_matrix * out_buffer = gsl_matrix_alloc(num_ts*num_obs,num_ts*num_obs);
+
+    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, in_buffer, in_buffer, 0.0, out_buffer);
+    gsl_matrix_free(in_buffer);
+
+    ff_cov.alloc({num_ts,num_obs,num_ts,num_obs});
+    ff_cov << *out_buffer->data;
+    gsl_matrix_free(out_buffer);
+    cout << "Write covariance matrix of initial values and fluctuating forces: " << out_folder+"/"+"ff_cov.f64" << endl;
+    ff_cov.write("ff_cov.f64", out_folder);
 }
 

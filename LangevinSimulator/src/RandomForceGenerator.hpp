@@ -24,6 +24,7 @@ If not, see <https://www.gnu.org/licenses/>.
 #define RANDOMFORCEGENERATOR_HPP
 
 #include <vector>
+#include <string>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_matrix.h>
 
@@ -40,12 +41,15 @@ class RandomForceGenerator
 
             After the RandomForceGenerator has been constructed, the fluctuating forces can be drawn by calling \ref pull_multivariate_gaussian().
 
-            \param average Mean value of the fluctuating forces as a one-dimensional tensor: `average[num_obs*t+o]=<ff(t,o)>`.
-            \param cov Covariance matrix of the fluctuating forces `cov(num_obs*t1+o1,num_obs*t2+o2)=<ff(t1,o1)*ff(t2,o2)>-<ff(t1,o1)>*<ff(t2,o2)>`.
+            \param average Mean value of the fluctuating forces as a one-dimensional tensor: `ff_average[num_obs*t+o]=<ff(t,o)>`.
+            \param cov Covariance matrix of the fluctuating forces `ff_cov(num_obs*t1+o1,num_obs*t2+o2)=<ff(t1,o1)*ff(t2,o2)>-<ff(t1,o1)>*<ff(t2,o2)>`.
             \param num_obs Number of observables.
         */
-        RandomForceGenerator(TensorUtils::tensor<double,1> &average, TensorUtils::tensor<double,2> &cov, size_t num_obs);
+        RandomForceGenerator();
         virtual ~RandomForceGenerator();
+
+        void init_cov(TensorUtils::tensor<double,2> &ff_average, TensorUtils::tensor<double,4> &ff_cov, std::string out_folder);
+        void init_decomp(TensorUtils::tensor<double,2> &ff_average, TensorUtils::tensor<double,4> &ff_decomp);
 
         /*!
             \brief Draw multivariate normal distributed fluctuating forces.
@@ -64,19 +68,19 @@ class RandomForceGenerator
 
             This function is called within the constructor and stores the matrix `M` in an internal buffer to be used by \ref pull_multivariate_gaussian().
         */
-        void set_decomp(TensorUtils::tensor<double,2> &source, gsl_matrix *dest);
+        void set_decomp(TensorUtils::tensor<double,4> &source, gsl_matrix *dest);
 
         //! \private
         TensorUtils::tensor<double,2> rand_mult_gaussian;
 
         //! \private
-        gsl_matrix *f_t_s_decomp;
+        gsl_matrix *ff_decomp;
         //! \private
         gsl_vector *buffer;
         //! \private
         gsl_vector *buffer2;
         //! \private
-        TensorUtils::tensor<double,1> average;
+        TensorUtils::tensor<double,2> ff_average;
 
         //! \private
         const gsl_rng_type * rng_T;
