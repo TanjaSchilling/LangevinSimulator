@@ -101,7 +101,7 @@ namespace KernelMethods {
 
         At the boundary the one-sided difference quotient is used.
     */
-    TensorUtils::tensor<double,3> diffTrajectories(TensorUtils::tensor<double,3> &trajectories, double dt);
+    TensorUtils::tensor<double,3> diffTrajectories(TensorUtils::tensor<double,3> &trajectories, double dt, bool darboux_sum);
 
     /*!
         \brief Block-wise matrix inversion.
@@ -109,6 +109,10 @@ namespace KernelMethods {
         \return Returns a tensor defined by `return_val(n,:,:)=mat(n,:,:)^{-1}`.
     */
     TensorUtils::tensor<double,3> matInverse(TensorUtils::tensor<double,3> &mat);
+
+    TensorUtils::tensor<double,3> diffCorrDiag(TensorUtils::tensor<double,3> &correlation, double dt);
+
+    TensorUtils::tensor<double,3> getDrift(TensorUtils::tensor<double,4> &correlation, double dt);
 
     /*!
         \brief Computes the drift term and the fluctuating forces.
@@ -119,10 +123,10 @@ namespace KernelMethods {
     */
     TensorUtils::tensor<double,3> getFluctuatingForce(
         TensorUtils::tensor<double,4> &kernel,
+        TensorUtils::tensor<double,3> &drift,
         TensorUtils::tensor<double,3> &trajectories,
         TensorUtils::tensor<double,1> &times,
-        std::string out_folder,
-        bool txt_out);
+        bool darboux_sum);
 
     /*!
         \brief Computes the covariance matrix of the fluctuating forces as required from

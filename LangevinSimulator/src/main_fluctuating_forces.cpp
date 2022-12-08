@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
 	string out_folder;
 	bool txt_out;
 	bool gaussian_init_val;
+	bool darboux_sum;
 
 	ParameterHandler cmdtool {argc, argv};
 	cmdtool.process_flag_help();
@@ -51,6 +52,10 @@ int main(int argc, char *argv[]) {
         cmdtool.add_usage("gaussian_init_val: Boolean. If true, the initial values will be drawn from a Gaussian. \
                           Else, the original initial values will be used for numerical simulations. Default: false");
         gaussian_init_val = cmdtool.get_bool("gaussian_init_val", false);
+        cmdtool.add_usage("darboux_sum: Boolean. If true, the forward difference quotient and lower Darboux sum \
+                          are used for the calculation of the fluctuating forces and the numerical integration. \
+                          Else, the symmetric difference quotient and Simpson rule are used. Default: true");
+        darboux_sum = cmdtool.get_bool("darboux_sum", true);
 	} catch (const ParameterHandler::BadParamException &ex) {
 		cmdtool.show_usage();
 		throw ex;
@@ -60,10 +65,11 @@ int main(int argc, char *argv[]) {
 	cout << "out_folder" << '\t'<< out_folder << endl;
 	cout << "txt_out" << '\t'<< txt_out << endl;
 	cout << "gaussian_init_val" << '\t'<< gaussian_init_val << endl;
+	cout << "darboux_sum" << '\t' << darboux_sum << endl;
 
 	filesystem::path out_path = out_folder;
-    tensor<double,3> fluctuating_force;
 
+    tensor<double,3> fluctuating_force;
     try
     {
         cout << "Search fluctuating forces: " << out_path/"ff.f64" << endl;
@@ -85,6 +91,10 @@ int main(int argc, char *argv[]) {
         tensor<double,1> times;
         times.read(out_path/"times.f64");
 
+        cout << "Search drift term: " << out_path/"drift.f64" << endl;
+        tensor<double,3> drift;
+        drift.read(out_path/"drift.f64");
+
         // set args
         size_t num_traj = trajectories.shape[0];
         size_t num_ts = trajectories.shape[1];
@@ -92,18 +102,7 @@ int main(int argc, char *argv[]) {
         cout << "Loaded "<< num_traj << " trajectories with " << num_ts << " timesteps and " << num_obs << " observables." << endl;
 
         // calculate fluctuating forces
-        fluctuating_force = KernelMethods::getFluctuatingForce(kernel, trajectories, times, out_path, txt_out);
-
-        if(!gaussian_init_val)
-        {
-            cout << "Compute covariance matrix of fluctuating forces." << endl;
-            KernelMethods::writeCovarianceMatrix(fluctuating_force, out_path);
-        }
-        else
-        {
-            cout << "Compute covariance matrix of initial values and fluctuating forces." << endl;
-            KernelMethods::writeExtendedCovarianceMatrix(trajectories, fluctuating_force, out_path);
-        }
+        fluctuating_force = KernelMethods::getFluctuatingForce(kernel, drift, trajectories, times, darboux_sum);
 
         cout << "Write fluctuating forces." << endl;
         fluctuating_force.write("ff.f64",out_path);
@@ -116,6 +115,46 @@ int main(int argc, char *argv[]) {
                 ff << fluctuating_force[n];
                 InputOutput::write(times,ff,(out_path/"FF")/("ff_"+to_string(n)+".txt"));
             }
+        }
+
+        if(!gaussian_init_val)
+        {
+            cout << "Compute average and covariance matrix of fluctuating forces." << endl;
+            KernelMethods::writeCovarianceMatrix(fluctuating_force, out_path);
+        }
+        else
+        {
+            cout << "Compute average and covariance matrix of initial values and fluctuating forces." << endl;
+            KernelMethods::writeExtendedCovarianceMatrix(trajectories, fluctuating_force, out_path);
+        }
+        return 0;
+    }
+
+    tensor<double,4> ff_cov;
+    tensor<double,2> ff_average;
+    try
+    {
+        cout << "Search covariance of fluctuating forces: " << out_path/"ff_cov.f64" << endl;
+        ff_cov.read(out_path/"ff_cov.f64");
+        cout << "Search average of fluctuating forces: " << out_path/"ff_average.f64" << endl;
+        ff_average.read(out_path/"ff_average.f64");
+    }
+    catch(exception &ex)
+    {
+        cout << "Unable to read binary." << endl;
+        if(!gaussian_init_val)
+        {
+            cout << "Compute average and covariance matrix of fluctuating forces." << endl;
+            KernelMethods::writeCovarianceMatrix(fluctuating_force, out_path);
+        }
+        else
+        {
+            cout << "Load trajectories from: " << out_path/"traj.f64" << endl;
+            tensor<double,3> trajectories;
+            trajectories.read(out_path/"traj.f64");
+
+            cout << "Compute average and covariance matrix of initial values and fluctuating forces." << endl;
+            KernelMethods::writeExtendedCovarianceMatrix(trajectories, fluctuating_force, out_path);
         }
     }
 

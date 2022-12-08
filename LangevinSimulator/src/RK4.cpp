@@ -24,6 +24,8 @@ If not, see <https://www.gnu.org/licenses/>.
 
 #include <cmath>
 #include "KernelMethods.hpp"
+#include <gsl/gsl_blas.h>
+
 
 using namespace std;
 using namespace TensorUtils;
@@ -64,7 +66,6 @@ tensor<double,1> RK4::f(
             }
         }
     }
-
     size_t j=0;
     while(j+1 < n) // Simpson rule
     {
@@ -76,7 +77,6 @@ tensor<double,1> RK4::f(
         }
         j+=2;
     }
-
     if(j+1 == n) // Trapezoidal rule for last time-interval
     {
         for(size_t i=0; i<num_obs; i++)
@@ -85,7 +85,6 @@ tensor<double,1> RK4::f(
             f_n_x[i] += 1.5*buffer_2d[(j+1)*num_obs+i];
         }
     }
-
     f_n_x *= dt/3.0;
 
     for(size_t i = 0; i<num_obs; i++)

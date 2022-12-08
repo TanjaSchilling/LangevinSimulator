@@ -59,7 +59,8 @@ class ParameterHandler:
                  ff_exe="./bin/Release/main_fluctuating_forces",
                  sim_exe="./bin/Release/main_simulator",
                  mollifier_width=10,
-                 gaussian_init_val=False):
+                 gaussian_init_val=False,
+                 darboux_sum=True):
         self.out_folder = out_folder
         self.in_folder = in_folder
         self.in_prefix = in_prefix
@@ -78,6 +79,7 @@ class ParameterHandler:
         self.sim_exe = sim_exe
         self.mollifier_width = mollifier_width
         self.gaussian_init_val = gaussian_init_val
+        self.darboux_sum = darboux_sum
 
     def get_parameter_file(self):
         parameter_file = """\
@@ -93,7 +95,8 @@ shift {shift}
 num_sim {num_sim}
 txt_out {txt_out}
 mollifier_width {mollifier_width}
-gaussian_init_val {gaussian_init_val}""".format(
+gaussian_init_val {gaussian_init_val}
+darboux_sum {darboux_sum}""".format(
             out_folder=self.out_folder,
             in_folder=self.in_folder,
             in_prefix=self.in_prefix,
@@ -106,7 +109,8 @@ gaussian_init_val {gaussian_init_val}""".format(
             num_sim=self.num_sim,
             txt_out=self.txt_out,
             mollifier_width=self.mollifier_width,
-            gaussian_init_val=self.gaussian_init_val)
+            gaussian_init_val=self.gaussian_init_val,
+            darboux_sum=self.darboux_sum)
         return parameter_file
 
     def write_parameter_file(self, parameter_filename):

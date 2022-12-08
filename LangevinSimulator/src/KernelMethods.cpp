@@ -61,20 +61,14 @@ tensor<double,4> KernelMethods::calcLowerBlockTriangularInverse(TensorUtils::ten
     }
     double dummy;
     gsl_matrix * out = gsl_matrix_alloc(num_obs,num_obs);
+    src = src.transpose({0,2,3,1});
     for(size_t s=0;s<num_ts;s++)
     {
         for(size_t t=s+1;t<num_ts;t++)
         {
-            gsl_matrix * lhs = gsl_matrix_alloc(num_obs,num_obs*(t-s));
-            gsl_matrix * rhs = gsl_matrix_alloc(num_obs*(t-s),num_obs);
-            for(size_t i=0;i<num_obs;i++)
-            {
-                memcpy( (lhs->data)+i*(t-s)*num_obs,&src(t,i,s),(t-s)*num_obs*sizeof(double));
-            }
-            memcpy(rhs->data,&inverse(s,s),num_obs*num_obs*(t-s)*sizeof(double));
-            gsl_blas_dgemm(CblasNoTrans,CblasNoTrans,-1.0,lhs,rhs,0.0,out);
-            gsl_matrix_free(lhs);
-            gsl_matrix_free(rhs);
+            gsl_matrix_const_view lhs = gsl_matrix_const_view_array(&src(t,s),(t-s)*num_obs,num_obs);
+            gsl_matrix_const_view rhs = gsl_matrix_const_view_array(&inverse(s,s),(t-s)*num_obs,num_obs);
+            gsl_blas_dgemm(CblasTrans,CblasNoTrans,-1.0,&lhs.matrix,&rhs.matrix,0.0,out);
             for(size_t i=0;i<num_obs;i++)
             {
                 for(size_t j=0;j<num_obs;j++)
@@ -91,6 +85,7 @@ tensor<double,4> KernelMethods::calcLowerBlockTriangularInverse(TensorUtils::ten
     }
     gsl_matrix_free(out);
     inverse = inverse.transpose({1,2,0,3});
+    src = src.transpose({0,3,1,2});
     return inverse;
 }
 
@@ -436,28 +431,78 @@ void KernelMethods::getMemoryKernel(
     delete[] diag_inverts;
 }
 
-tensor<double,3> KernelMethods::diffTrajectories(tensor<double,3> &trajectories, double dt)
+tensor<double,3> KernelMethods::diffTrajectories(tensor<double,3> &trajectories, double dt, bool darboux_sum)
 {
     size_t num_traj = trajectories.shape[0];
     size_t num_ts = trajectories.shape[1];
     size_t num_obs   = trajectories.shape[2];
-    tensor<double,3> diff(trajectories.shape);
-    for(size_t i=0; i<num_traj; i++)
+    tensor<double,3> diff(trajectories.shape,0.0);
+    if(darboux_sum)
     {
-        for(size_t k=0; k<num_obs; k++)
+        double dummy = 1.0/dt;
+        for(size_t i=0; i<num_traj; i++)
         {
-            diff(i,0,k) = (trajectories(i,1,k)-trajectories(i,0,k))/dt;
+            for(size_t j=0; j+1<num_ts; j++)
+            {
+                for(size_t k=0; k<num_obs; k++)
+                {
+                    diff(i,j,k) = (trajectories(i,j+1,k)-trajectories(i,j,k))*dummy;
+                }
+            }
         }
-        for(size_t j=1; j+1<num_ts; j++)
+    }
+    else
+    {
+        for(size_t i=0; i<num_traj; i++)
         {
             for(size_t k=0; k<num_obs; k++)
             {
-                diff(i,j,k) = (trajectories(i,j+1,k)-trajectories(i,j-1,k))/(2*dt);
+                diff(i,0,k) = (trajectories(i,1,k)-trajectories(i,0,k))/dt;
+            }
+            for(size_t j=1; j+1<num_ts; j++)
+            {
+                for(size_t k=0; k<num_obs; k++)
+                {
+                    diff(i,j,k) = (trajectories(i,j+1,k)-trajectories(i,j-1,k))/(2*dt);
+                }
+            }
+            for(size_t k=0; k<num_obs; k++)
+            {
+                diff(i,num_ts-1,k) = (trajectories(i,num_ts-1,k)-trajectories(i,num_ts-2,k))/dt;
             }
         }
+    }
+    return diff;
+};
+
+tensor<double,3> KernelMethods::diffCorrDiag(tensor<double,3> &corr_diag, double dt)
+{
+    size_t num_ts = corr_diag.shape[0];
+    size_t num_obs   = corr_diag.shape[1];
+    tensor<double,3> diff(corr_diag.shape);
+    double dummy = 0.5/dt;
+    for(size_t k=0; k<num_obs; k++)
+    {
+        for(size_t l=0; l<num_obs; l++)
+        {
+            diff(0,k,l) = (corr_diag(1,k,l)-corr_diag(0,k,l))*2*dummy;
+        }
+    }
+    for(size_t t=1; t+1<num_ts; t++)
+    {
         for(size_t k=0; k<num_obs; k++)
         {
-            diff(i,num_ts-1,k) = (trajectories(i,num_ts-1,k)-trajectories(i,num_ts-2,k))/dt;
+            for(size_t l=0; l<num_obs; l++)
+            {
+                diff(t,k,l) = (corr_diag(t+1,k,l)-corr_diag(t-1,k,l))*dummy;
+            }
+        }
+    }
+    for(size_t k=0; k<num_obs; k++)
+    {
+        for(size_t l=0; l<num_obs; l++)
+        {
+            diff(num_ts-1,k,l) = (corr_diag(num_ts-1,k,l)-corr_diag(num_ts-2,k,l))*2*dummy;
         }
     }
     return diff;
@@ -503,62 +548,29 @@ tensor<double,3> KernelMethods::matInverse(tensor<double,3> &mat)
     return result;
 }
 
-tensor<double,3> KernelMethods::getFluctuatingForce(
-    tensor<double,4> &kernel,
-    tensor<double,3> &trajectories,
-    tensor<double,1> &times,
-    string out_folder,
-    bool txt_out)
+tensor<double,3> KernelMethods::getDrift(tensor<double,4> &correlation, double dt)
 {
-    double dt = times[1]-times[0];
+    size_t num_ts = correlation.shape[0];
+    size_t num_obs = correlation.shape[1];
 
-    size_t num_traj = trajectories.shape[0];
-    size_t num_ts = trajectories.shape[1];
-    size_t num_obs = trajectories.shape[2];
+    tensor<double,3> diff_diag({num_ts,num_obs,num_obs});
+    tensor<double,3> diag_inverse(diff_diag.shape);
+    for(size_t t=0;t<num_ts;t++)
+    {
+        for(size_t k=0;k<num_obs;k++)
+        {
+            for(size_t l=0;l<num_obs;l++)
+            {
+                diff_diag(t,k,l)=correlation(t,k,t,l);
+            }
+        }
+    }
+    diag_inverse=diff_diag;
+    diff_diag=diffCorrDiag(diff_diag,dt);
+    diag_inverse=matInverse(diag_inverse);
 
-    // get dA/dt
-    tensor<double,3> diff_traj = diffTrajectories(trajectories, dt);
-
-    // calculate drift
+    tensor<double,3> drift(diff_diag.shape);
     double dummy;
-    tensor<double,3> drift({num_ts,num_obs,num_obs},0.0);
-    for(size_t t=0; t<num_ts; t++)
-    {
-        for(size_t i=0; i<num_obs; i++)
-        {
-            for(size_t j=0; j<num_obs; j++)
-            {
-                dummy = 0.0;
-                for(size_t n=0; n<num_traj; n++)
-                {
-                    dummy += diff_traj(n,t,i)*trajectories(n,t,j);
-                }
-                drift(t,i,j) = dummy;
-            }
-        }
-    }
-    drift *= (1.0/num_traj); // = < dotA otimes A > (t)
-
-    tensor<double,3> buffer({num_ts,num_obs,num_obs});
-    for(size_t t=0; t<num_ts; t++)
-    {
-        for(size_t i=0; i<num_obs; i++)
-        {
-            for(size_t j=0; j<num_obs; j++)
-            {
-                dummy = 0.0;
-                for(size_t n=0; n<num_traj; n++)
-                {
-                    dummy += trajectories(n,t,i)*trajectories(n,t,j);
-                }
-                buffer(t,i,j) = dummy;
-            }
-        }
-    }
-    buffer = matInverse(buffer);
-    buffer *= num_traj;        // = < A otimes A > ^-1 (t)
-
-    tensor<double,3> buffer2(buffer.shape);
     for(size_t t=0; t<num_ts; t++)
     {
         for(size_t i=0; i<num_obs; i++)
@@ -568,23 +580,33 @@ tensor<double,3> KernelMethods::getFluctuatingForce(
                 dummy = 0.0;
                 for(size_t k=0; k< num_obs; k++)
                 {
-                    dummy += drift(t,i,k)*buffer(t,k,j);
+                    dummy += diff_diag(t,i,k)*diag_inverse(t,k,j);
                 }
-                buffer2(t,i,j) = dummy;
+                drift(t,i,j) = dummy;
             }
         }
     }
-    drift = buffer2; // drift = < dotA otimes A > * < A otimes A > ^-1 (t)
-    buffer.clear();
-    buffer2.clear();
-    cout << "Write drift term: " << out_folder+"/"+"drift.f64" << endl;
-    drift.write("drift.f64",out_folder);
-    if(txt_out)
-    {
-        InputOutput::write(times,drift,filesystem::path(out_folder+"/drift.txt"));
-    }
+    return drift;
+}
+
+tensor<double,3> KernelMethods::getFluctuatingForce(
+    tensor<double,4> &kernel,
+    tensor<double,3> &drift,
+    tensor<double,3> &trajectories,
+    tensor<double,1> &times,
+    bool darboux_sum)
+{
+    double dt = times[1]-times[0];
+
+    size_t num_traj = trajectories.shape[0];
+    size_t num_ts = trajectories.shape[1];
+    size_t num_obs = trajectories.shape[2];
+
+    // get dA/dt
+    tensor<double,3> diff_traj = diffTrajectories(trajectories, dt, darboux_sum);
 
     // subtract drift * A
+    double dummy;
     for(size_t n=0; n<num_traj; n++)
     {
         for(size_t t=0; t<num_ts; t++)
@@ -603,46 +625,68 @@ tensor<double,3> KernelMethods::getFluctuatingForce(
     drift.clear();
 
     // subtract memory part
-    buffer.alloc({num_traj, num_ts, num_obs},0.0);
-    const size_t k_incr_0 = kernel.incr[0];
-    const size_t k_incr_1 = kernel.incr[1];
-    const size_t k_incr_2 = kernel.incr[2];
-    const size_t traj_incr_0 = trajectories.incr[0];
-    const size_t traj_incr_1 = trajectories.incr[1];
-
-    for(size_t n=0; n<num_traj; n++)
+    tensor<double,3> buffer;
+    if(darboux_sum)
     {
-        for(size_t t1=0; t1<num_ts; t1++)
+        trajectories=trajectories.transpose({1,2,0});
+        kernel=kernel.transpose({0,1,3,2});
+        buffer.alloc({num_ts,num_obs,num_traj},0.0);
+        gsl_matrix * out = gsl_matrix_alloc(num_obs,num_traj);
+        for(size_t t=1;t<num_ts;t++)
         {
-            for(size_t i=0; i<num_obs;i++)
+            gsl_matrix_const_view kernel_t = gsl_matrix_const_view_array(&kernel(t),t*num_obs,num_obs);
+            gsl_matrix_const_view traj = gsl_matrix_const_view_array(&trajectories[0],t*num_obs,num_traj);
+            gsl_blas_dgemm(CblasTrans,CblasNoTrans,1.0,&kernel_t.matrix,&traj.matrix,0.0,out);
+            memcpy(&buffer(t),out->data,num_obs*num_traj*sizeof(double));
+        }
+        gsl_matrix_free(out);
+        buffer=buffer.transpose({2,0,1});
+        buffer *=dt;
+        trajectories = trajectories.transpose({2,0,1});
+        diff_traj -= buffer; // = dA/dt-drift*A-SUM_t2 K(.,t2)*A(t2)
+    }
+    else
+    {
+        buffer.alloc({num_traj,num_ts,num_obs});
+        const size_t k_incr_0 = kernel.incr[0];
+        const size_t k_incr_1 = kernel.incr[1];
+        const size_t k_incr_2 = kernel.incr[2];
+        const size_t traj_incr_0 = trajectories.incr[0];
+        const size_t traj_incr_1 = trajectories.incr[1];
+
+        for(size_t n=0; n<num_traj; n++)
+        {
+            for(size_t t1=0; t1<num_ts; t1++)
             {
-                dummy = 0.0;
-                size_t t2=0;
-                while(t2+1<t1)
+                for(size_t i=0; i<num_obs;i++)
                 {
-                    for(size_t k=0; k<num_obs; k++)
+                    dummy = 0.0;
+                    size_t t2=0;
+                    while(t2+1<t1)
                     {
-                        dummy += kernel[k_incr_0*t1+k_incr_1*t2+k_incr_2*i+k]*trajectories[traj_incr_0*n+traj_incr_1*t2+k];
-                        dummy += 4.0*kernel[k_incr_0*t1+k_incr_1*(t2+1)+k_incr_2*i+k]*trajectories[traj_incr_0*n+traj_incr_1*(t2+1)+k];
-                        dummy += kernel[k_incr_0*t1+k_incr_1*(t2+2)+k_incr_2*i+k]*trajectories[traj_incr_0*n+traj_incr_1*(t2+2)+k];
+                        for(size_t k=0; k<num_obs; k++)
+                        {
+                            dummy += kernel[k_incr_0*t1+k_incr_1*t2+k_incr_2*i+k]*trajectories[traj_incr_0*n+traj_incr_1*t2+k];
+                            dummy += 4.0*kernel[k_incr_0*t1+k_incr_1*(t2+1)+k_incr_2*i+k]*trajectories[traj_incr_0*n+traj_incr_1*(t2+1)+k];
+                            dummy += kernel[k_incr_0*t1+k_incr_1*(t2+2)+k_incr_2*i+k]*trajectories[traj_incr_0*n+traj_incr_1*(t2+2)+k];
+                        }
+                        t2+=2;
                     }
-                    t2+=2;
-                }
-                if(t2+1 == t1) // Trapezoidal rule for last time-interval
-                {
-                    for(size_t k=0; k<num_obs; k++)
+                    if(t2+1 == t1) // Trapezoidal rule for last time-interval
                     {
-                        dummy += 1.5*kernel[k_incr_0*t1+k_incr_1*t2+k_incr_2*i+k]*trajectories[traj_incr_0*n+traj_incr_1*t2+k];
-                        dummy += 1.5*kernel[k_incr_0*t1+k_incr_1*(t2+1)+k_incr_2*i+k]*trajectories[traj_incr_0*n+traj_incr_1*(t2+1)+k];
+                        for(size_t k=0; k<num_obs; k++)
+                        {
+                            dummy += 1.5*kernel[k_incr_0*t1+k_incr_1*t2+k_incr_2*i+k]*trajectories[traj_incr_0*n+traj_incr_1*t2+k];
+                            dummy += 1.5*kernel[k_incr_0*t1+k_incr_1*(t2+1)+k_incr_2*i+k]*trajectories[traj_incr_0*n+traj_incr_1*(t2+1)+k];
+                        }
                     }
+                    buffer(n,t1,i) = dummy;
                 }
-                buffer(n,t1,i) = dummy;
             }
         }
+        buffer *= dt/3.0;
+        diff_traj -= buffer; // = dA/dt-drift*A-SUM_t2 K(.,t2)*A(t2)
     }
-    buffer *= dt/3.0;
-    diff_traj -= buffer; // = dA/dt-drift*A-SUM_t2 K(.,t2)*A(t2)
-    buffer.clear();
 
     return diff_traj;
 }

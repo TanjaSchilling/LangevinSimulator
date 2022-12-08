@@ -39,7 +39,7 @@ params.t_max = 60
 params.increment = 1
 params.shift = False 
 params.fluctuating_force = True 
-params.num_sim = 5000
+params.num_sim = 20000
 params.txt_out = False
 params.corr_exe = "./bin/Release/main_correlation"
 params.kernel_exe = "./bin/Release/main_kernel"
@@ -47,6 +47,7 @@ params.ff_exe = "./bin/Release/main_fluctuating_forces"
 params.sim_exe = "./bin/Release/main_simulator"
 params.mollifier_width = 0
 params.gaussian_init_val = True
+params.darboux_sum = True
 
 # RUN CPP EXECUTABLES
 run(params)
@@ -59,15 +60,12 @@ os.system("cp "+os.path.basename(__file__)+" "+params.out_folder+'/'+"run.py")
 ###############################################################################################################
 
 # set parameters (see 'ParameterHandler.py' for details)
-params = ParameterHandler()
 params.out_folder = "./TEST_OUT_SIM"
 params.in_folder = "./TEST_OUT/SIM"
-params.shift = False 
 params.fluctuating_force = False 
 params.num_sim = 0
 params.txt_out = False
 params.mollifier_width = 0
-params.gaussian_init_val = True
 
 # RUN CPP EXECUTABLES
 run(params)
