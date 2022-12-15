@@ -40,6 +40,7 @@ int main(int argc, char** argv) {
 
 	string out_folder;
 	bool txt_out;
+	bool stationary;
 
 	ParameterHandler cmdtool {argc, argv};
 	cmdtool.process_flag_help();
@@ -49,6 +50,8 @@ int main(int argc, char** argv) {
 		out_folder = cmdtool.get_string("out_folder", "./OUT");
         cmdtool.add_usage("txt_out: Boolean. If true, writes output files in text format. Default: true");
         txt_out = cmdtool.get_bool("txt_out", true);
+		cmdtool.add_usage("stationary: Boolean. If true, treats the process as stationary. Default: false.");
+		stationary = cmdtool.get_bool("stationary", false);
 	} catch (const ParameterHandler::BadParamException &ex) {
 		cmdtool.show_usage();
 		throw ex;
@@ -60,70 +63,121 @@ int main(int argc, char** argv) {
 
 	filesystem::path out_path = out_folder;
 
-
-    TensorUtils::tensor<double,4> correlation;
-    cout << "Load correlation from: " << out_path/"correlation.f64" << endl;
-    correlation.read(out_path/"correlation.f64");
-
-    TensorUtils::tensor<double,1> times;
-    cout << "Load times from: " << out_path/"times.f64" << endl;
-    times.read(out_path/"times.f64");
-
-
-    size_t num_ts = correlation.shape[0];
-    size_t num_obs = correlation.shape[1];
-    size_t num_tot = num_ts * num_obs;
-    double dt = (times[1]-times[0]);
-
-    std::cout << "#\tnum_ts: " << num_ts << "\tnum_obs: " << num_obs << "\n";
-    std::cout << "#\tdt: " << dt << "\n";
-
-    TensorUtils::tensor<double,3> drift;
-    try
+    if(!stationary)
     {
-        cout << "Search drift term: " << out_path/"drift.f64" << endl;
-        drift.read(out_path/"drift.f64");
-    }
-    catch(exception &ex)
-    {
-        cout << "Unable to read binary. Calculate drift." << endl;
-        drift = KernelMethods::getDrift(correlation,dt);
-        cout << "Write drift term: " << out_path/"drift.f64" << endl;
-        drift.write("drift.f64",out_path);
-        if(txt_out)
+        TensorUtils::tensor<double,4> correlation;
+        cout << "Load correlation from: " << out_path/"correlation.f64" << endl;
+        correlation.read(out_path/"correlation.f64");
+
+        TensorUtils::tensor<double,1> times;
+        cout << "Load times from: " << out_path/"times.f64" << endl;
+        times.read(out_path/"times.f64");
+
+        size_t num_ts = correlation.shape[0];
+        size_t num_obs = correlation.shape[1];
+        size_t num_tot = num_ts * num_obs;
+        double dt = (times[1]-times[0]);
+
+        std::cout << "#\tnum_ts: " << num_ts << "\tnum_obs: " << num_obs << "\n";
+        std::cout << "#\tdt: " << dt << "\n";
+
+        TensorUtils::tensor<double,3> drift;
+        try
         {
-            InputOutput::write(times,drift,filesystem::path(out_path/"drift.txt"));
+            cout << "Search drift term: " << out_path/"drift.f64" << endl;
+            drift.read(out_path/"drift.f64");
         }
-        drift.clear();
-    }
-
-    TensorUtils::tensor<double,4> memory_kernel;
-    try
-    {
-        cout << "Search memory kernel: " << out_path/"kernel.f64" << endl;
-        memory_kernel.read(out_path/"kernel.f64");
-    }
-    catch(exception &ex)
-    {
-        cout << "Unable to read binary. Calculate memory kernel." << endl;
-
-        gsl_matrix* kernel = gsl_matrix_alloc(num_tot, num_tot);
-        gsl_matrix* corr = gsl_matrix_alloc(num_tot, num_tot);
-        correlation >> *corr->data;
-
-        KernelMethods::getMemoryKernel(kernel,corr,num_ts,num_obs,dt);
-
-        gsl_matrix_free(corr);
-        memory_kernel.alloc({num_ts,num_obs,num_ts,num_obs});
-        memory_kernel << *kernel->data;
-        gsl_matrix_free(kernel);
-        cout << "Write memory kernel: " << out_path/"kernel.f64" << endl;
-        if(txt_out)
+        catch(exception &ex)
         {
-            InputOutput::write(times,memory_kernel,out_path/"kernel.txt");
+            cout << "Unable to read binary. Calculate drift." << endl;
+            drift = KernelMethods::getDrift(correlation,dt);
+            cout << "Write drift term: " << out_path/"drift.f64" << endl;
+            drift.write("drift.f64",out_path);
+            if(txt_out)
+            {
+                InputOutput::write(times,drift,filesystem::path(out_path/"drift.txt"));
+            }
+            drift.clear();
         }
-        memory_kernel.transpose({0,2,1,3}).write("kernel.f64",out_path);
-        memory_kernel.clear();
+
+        TensorUtils::tensor<double,4> memory_kernel;
+        try
+        {
+            cout << "Search memory kernel: " << out_path/"kernel.f64" << endl;
+            memory_kernel.read(out_path/"kernel.f64");
+        }
+        catch(exception &ex)
+        {
+            cout << "Unable to read binary. Calculate memory kernel." << endl;
+            gsl_matrix* kernel = gsl_matrix_alloc(num_tot, num_tot);
+            gsl_matrix* corr = gsl_matrix_alloc(num_tot, num_tot);
+            correlation >> *corr->data;
+            KernelMethods::getMemoryKernel(kernel,corr,num_ts,num_obs,dt);
+            gsl_matrix_free(corr);
+            memory_kernel.alloc({num_ts,num_obs,num_ts,num_obs});
+            memory_kernel << *kernel->data;
+            gsl_matrix_free(kernel);
+            cout << "Write memory kernel: " << out_path/"kernel.f64" << endl;
+            if(txt_out)
+            {
+                InputOutput::write(times,memory_kernel,out_path/"kernel.txt");
+            }
+            memory_kernel.transpose({0,2,1,3}).write("kernel.f64",out_path);
+        }
+    }
+    else
+    {
+        TensorUtils::tensor<double,3> correlation;
+        cout << "Load correlation from: " << out_path/"correlation.f64" << endl;
+        correlation.read(out_path/"correlation.f64");
+
+        TensorUtils::tensor<double,1> times;
+        cout << "Load times from: " << out_path/"times.f64" << endl;
+        times.read(out_path/"times.f64");
+
+        size_t num_ts = correlation.shape[0];
+        size_t num_obs = correlation.shape[1];
+        double dt = (times[1]-times[0]);
+
+        std::cout << "#\tnum_ts: " << num_ts << "\tnum_obs: " << num_obs << "\n";
+        std::cout << "#\tdt: " << dt << "\n";
+
+        TensorUtils::tensor<double,2> drift;
+        try
+        {
+            cout << "Search drift term: " << out_path/"drift.f64" << endl;
+            drift.read(out_path/"drift.f64");
+        }
+        catch(exception &ex)
+        {
+            cout << "Unable to read binary. Calculate drift." << endl;
+            drift = KernelMethods::getDrift(correlation,dt);
+            cout << "Write drift term: " << out_path/"drift.f64" << endl;
+            drift.write("drift.f64",out_path);
+            if(txt_out)
+            {
+                drift.write("drift.txt",out_path);
+            }
+            drift.clear();
+        }
+
+        TensorUtils::tensor<double,3> memory_kernel;
+        try
+        {
+            cout << "Search memory kernel: " << out_path/"kernel.f64" << endl;
+            memory_kernel.read(out_path/"kernel.f64");
+        }
+        catch(exception &ex)
+        {
+            cout << "Unable to read binary. Calculate memory kernel." << endl;
+            memory_kernel = KernelMethods::getMemoryKernel(correlation,dt);
+            cout << "Write memory kernel: " << out_path/"kernel.f64" << endl;
+            if(txt_out)
+            {
+                InputOutput::write(times,memory_kernel,out_path/"kernel.txt");
+            }
+            memory_kernel.write("kernel.f64",out_path);
+        }
     }
 
     cout << "END: main_kernel" << endl << endl;
