@@ -22,6 +22,7 @@ If not, see <https://www.gnu.org/licenses/>.
 
 #include "KernelMethods.hpp"
 
+#include <cstring>
 #include <iostream>
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_linalg.h>
