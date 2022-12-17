@@ -60,6 +60,7 @@ int main(int argc, char** argv) {
 	cout << "PARAMETERS: " << endl;
 	cout << "out_folder" << '\t'<< out_folder << endl;
 	cout << "txt_out" << '\t'<< txt_out << endl;
+	cout << "stationary" << '\t'<< stationary << endl;
 
 	filesystem::path out_path = out_folder;
 
