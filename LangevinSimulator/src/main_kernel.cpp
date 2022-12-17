@@ -128,8 +128,8 @@ int main(int argc, char** argv) {
     else
     {
         TensorUtils::tensor<double,3> correlation;
-        cout << "Load correlation from: " << out_path/"correlation.f64" << endl;
-        correlation.read(out_path/"correlation.f64");
+        cout << "Load correlation from: " << out_path/"correlation_stationary.f64" << endl;
+        correlation.read(out_path/"correlation_stationary.f64");
 
         TensorUtils::tensor<double,1> times;
         cout << "Load times from: " << out_path/"times.f64" << endl;
@@ -145,18 +145,18 @@ int main(int argc, char** argv) {
         TensorUtils::tensor<double,2> drift;
         try
         {
-            cout << "Search drift term: " << out_path/"drift.f64" << endl;
-            drift.read(out_path/"drift.f64");
+            cout << "Search drift term: " << out_path/"drift_stationary.f64" << endl;
+            drift.read(out_path/"drift_stationary.f64");
         }
         catch(exception &ex)
         {
             cout << "Unable to read binary. Calculate drift." << endl;
             drift = KernelMethods::getDrift(correlation,dt);
-            cout << "Write drift term: " << out_path/"drift.f64" << endl;
-            drift.write("drift.f64",out_path);
+            cout << "Write drift term: " << out_path/"drift_stationary.f64" << endl;
+            drift.write("drift_stationary.f64",out_path);
             if(txt_out)
             {
-                drift.write("drift.txt",out_path);
+                drift.write("drift_stationary.txt",out_path);
             }
             drift.clear();
         }
@@ -164,19 +164,19 @@ int main(int argc, char** argv) {
         TensorUtils::tensor<double,3> memory_kernel;
         try
         {
-            cout << "Search memory kernel: " << out_path/"kernel.f64" << endl;
-            memory_kernel.read(out_path/"kernel.f64");
+            cout << "Search memory kernel: " << out_path/"kernel_stationary.f64" << endl;
+            memory_kernel.read(out_path/"kernel_stationary.f64");
         }
         catch(exception &ex)
         {
             cout << "Unable to read binary. Calculate memory kernel." << endl;
             memory_kernel = KernelMethods::getMemoryKernel(correlation,dt);
-            cout << "Write memory kernel: " << out_path/"kernel.f64" << endl;
+            cout << "Write memory kernel: " << out_path/"kernel_stationary.f64" << endl;
             if(txt_out)
             {
-                InputOutput::write(times,memory_kernel,out_path/"kernel.txt");
+                InputOutput::write(times,memory_kernel,out_path/"kernel_stationary.txt");
             }
-            memory_kernel.write("kernel.f64",out_path);
+            memory_kernel.write("kernel_stationary.f64",out_path);
         }
     }
 

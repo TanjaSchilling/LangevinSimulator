@@ -111,7 +111,7 @@ namespace KernelMethods {
     */
     TensorUtils::tensor<double,3> matInverse(TensorUtils::tensor<double,3> &mat);
 
-    TensorUtils::tensor<double,3> diffCorrDiag(TensorUtils::tensor<double,3> &correlation, double dt);
+    TensorUtils::tensor<double,3> diffFront(TensorUtils::tensor<double,3> &correlation, double dt);
 
     TensorUtils::tensor<double,3> getDrift(TensorUtils::tensor<double,4> &correlation, double dt);
     TensorUtils::tensor<double,2> getDrift(TensorUtils::tensor<double,3> &correlation, double dt);

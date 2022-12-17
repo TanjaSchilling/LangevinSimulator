@@ -289,8 +289,8 @@ int main(int argc, char** argv) {
         TensorUtils::tensor<double,3> correlation;
         try
         {
-            cout << "Search correlation function: " << out_path/"correlation.f64" << endl;
-            correlation.read(out_path/"correlation.f64");
+            cout << "Search correlation function: " << out_path/"correlation_stationary.f64" << endl;
+            correlation.read(out_path/"correlation_stationary.f64");
         }
         catch(exception &ex)
         {
@@ -312,7 +312,7 @@ int main(int argc, char** argv) {
                     }
                 }
             }
-            traj.clear();
+            //traj.clear();
             double * lookup_table = new double[num_pad];
             FFTBW::FourierTransforms<double>::initLookUp(lookup_table,num_pad);
             for(size_t n=0; n<num_traj; n++)
@@ -360,11 +360,41 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+            for(size_t t=1;t<num_ts;t++)
+            {
+                dummy = 1.0/(num_ts-t);
+                for(size_t i=0;i<num_obs;i++)
+                {
+                    for(size_t j=0;j<num_obs;j++)
+                    {
+                        correlation(num_pad-t,i,j) *= dummy;
+                    }
+                }
+            }
             correlation *= 2.0/(num_pad*num_traj);
-            TensorUtils::tensor<double,3> corr_out({num_ts,num_obs,num_obs});
-            corr_out << correlation[0];
-            cout << "Write correlation function: " << out_path/"correlation.f64" << endl;
-            corr_out.write("correlation.f64",out_path);
+            TensorUtils::tensor<double,3> corr_out({2*num_ts-1,num_obs,num_obs});
+            for(size_t tau=0;tau<num_ts;tau++)
+            {
+                for(size_t k=0;k<num_obs;k++)
+                {
+                    for(size_t l=0;l<num_obs;l++)
+                    {
+                        corr_out(num_ts-1+tau,k,l) = correlation(tau,k,l);
+                    }
+                }
+            }
+            for(size_t tau=1;tau<num_ts;tau++)
+            {
+                for(size_t k=0;k<num_obs;k++)
+                {
+                    for(size_t l=0;l<num_obs;l++)
+                    {
+                        corr_out(num_ts-1-tau,k,l) = correlation(num_pad-tau,k,l);
+                    }
+                }
+            }
+            cout << "Write correlation function: " << out_path/"correlation_stationary.f64" << endl;
+            corr_out.write("correlation_stationary.f64",out_path);
         }
     }
 
