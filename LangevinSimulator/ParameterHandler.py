@@ -60,7 +60,8 @@ class ParameterHandler:
                  sim_exe="./bin/Release/main_simulator",
                  mollifier_width=10,
                  gaussian_init_val=False,
-                 darboux_sum=True):
+                 darboux_sum=True,
+                 stationary=False):
         self.out_folder = out_folder
         self.in_folder = in_folder
         self.in_prefix = in_prefix
@@ -80,6 +81,7 @@ class ParameterHandler:
         self.mollifier_width = mollifier_width
         self.gaussian_init_val = gaussian_init_val
         self.darboux_sum = darboux_sum
+        self.stationary = stationary
 
     def get_parameter_file(self):
         parameter_file = """\
@@ -96,7 +98,8 @@ num_sim {num_sim}
 txt_out {txt_out}
 mollifier_width {mollifier_width}
 gaussian_init_val {gaussian_init_val}
-darboux_sum {darboux_sum}""".format(
+darboux_sum {darboux_sum}
+stationary {stationary}""".format(
             out_folder=self.out_folder,
             in_folder=self.in_folder,
             in_prefix=self.in_prefix,
@@ -110,7 +113,8 @@ darboux_sum {darboux_sum}""".format(
             txt_out=self.txt_out,
             mollifier_width=self.mollifier_width,
             gaussian_init_val=self.gaussian_init_val,
-            darboux_sum=self.darboux_sum)
+            darboux_sum=self.darboux_sum,
+            stationary=self.stationary)
         return parameter_file
 
     def write_parameter_file(self, parameter_filename):
