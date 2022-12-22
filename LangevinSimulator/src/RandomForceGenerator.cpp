@@ -22,17 +22,15 @@ If not, see <https://www.gnu.org/licenses/>.
 
 #include "RandomForceGenerator.hpp"
 
+#include <gsl/gsl_randist.h>
+#include <gsl/gsl_linalg.h>
 #include <iostream>
 #include <sys/time.h>
 #include <cmath>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_eigen.h>
 #include <cstring>
 #include <iostream>
-
-#include <gsl/gsl_math.h>
-#include <gsl/gsl_blas.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_eigen.h>
-#include <gsl/gsl_randist.h>
 
 using namespace std;
 using namespace TensorUtils;

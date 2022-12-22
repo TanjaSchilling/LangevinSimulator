@@ -21,11 +21,11 @@ If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "RK4.hpp"
-#include "KernelMethods.hpp"
 
 #include <cmath>
-
+#include "KernelMethods.hpp"
 #include <gsl/gsl_blas.h>
+
 
 using namespace std;
 using namespace TensorUtils;

@@ -22,7 +22,6 @@ If not, see <https://www.gnu.org/licenses/>.
 
 #include "InputOutput.hpp"
 #include "KernelMethods.hpp"
-
 #include "parameter_handler.hpp"
 #include "TensorUtils.hpp"
 
@@ -41,7 +40,6 @@ int main(int argc, char *argv[]) {
 	bool txt_out;
 	bool gaussian_init_val;
 	bool darboux_sum;
-	bool stationary;
 
 	ParameterHandler cmdtool {argc, argv};
 	cmdtool.process_flag_help();
@@ -58,17 +56,9 @@ int main(int argc, char *argv[]) {
                           are used for the calculation of the fluctuating forces and the numerical integration. \
                           Else, the symmetric difference quotient and Simpson rule are used. Default: true");
         darboux_sum = cmdtool.get_bool("darboux_sum", true);
-		cmdtool.add_usage("stationary: Boolean. If true, treats the process as stationary. Default: false.");
-		stationary = cmdtool.get_bool("stationary", false);
 	} catch (const ParameterHandler::BadParamException &ex) {
 		cmdtool.show_usage();
 		throw ex;
-	}
-
-	if(stationary)
-	{
-        cout << "Set 'stationary' to false. Missing implementation." << endl;
-        return 1;
 	}
 
 	cout << "PARAMETERS: " << endl;
