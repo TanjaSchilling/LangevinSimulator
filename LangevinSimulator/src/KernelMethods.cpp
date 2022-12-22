@@ -21,14 +21,16 @@ If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "KernelMethods.hpp"
+#include "InputOutput.hpp"
 
 #include <cstring>
 #include <iostream>
-#include <gsl/gsl_permutation.h>
-#include <gsl/gsl_linalg.h>
 #include <filesystem>
 
-#include "InputOutput.hpp"
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_permutation.h>
+#include <gsl/gsl_linalg.h>
 
 using namespace std;
 using namespace TensorUtils;
@@ -432,6 +434,169 @@ void KernelMethods::getMemoryKernel(
     delete[] diag_inverts;
 }
 
+tensor<double,3> KernelMethods::getMemoryKernel(tensor<double,3> &correlation, double dt)
+{
+    size_t shape0 = correlation.shape[0];
+    size_t num_ts = (shape0+1)/2;
+    size_t num_obs = correlation.shape[1];
+
+    tensor<double,2> inverse({num_obs,num_obs});
+    gsl_matrix *lu = gsl_matrix_alloc(num_obs, num_obs);
+    gsl_permutation *permutation = gsl_permutation_alloc(num_obs);
+    int signum;
+    gsl_matrix *inv = gsl_matrix_alloc(num_obs, num_obs);
+    for(size_t i=0; i<num_obs; i++)
+    {
+        for(size_t j=0; j<num_obs; j++)
+        {
+            gsl_matrix_set(lu,i,j,correlation(num_ts-1,i,j));
+        }
+    }
+    gsl_linalg_LU_decomp(lu, permutation, &signum);
+    gsl_linalg_LU_invert(lu, permutation, inv);
+    inverse << *inv->data;
+    gsl_permutation_free(permutation);
+    gsl_matrix_free(lu);
+    gsl_matrix_free(inv);
+
+    tensor<double,3> diff;
+    diff=diffFront(correlation,dt);
+    tensor<double, 3> j0({shape0,num_obs,num_obs},0.0);
+    for(size_t t=0; t<shape0;t++)
+    {
+        for(size_t i=0; i<num_obs; i++)
+        {
+            for(size_t j=0; j<num_obs; j++)
+            {
+                for(size_t k=0; k<num_obs; k++)
+                {
+                    j0(t,i,j) += diff(t,i,k)*inverse(k,j);
+                }
+            }
+        }
+    }
+    diff.clear();
+
+    tensor<double,3> S_lower({num_ts,num_obs,num_obs});
+    tensor<double,3> S_upper({num_ts,num_obs,num_obs});
+    S_lower << j0(num_ts-1);
+    S_upper << j0(0);
+    S_lower *= +1*dt; // S = -dt*S0
+    S_upper *= -1*dt; // S = +dt*S0
+    for(size_t i=0; i<num_obs; i++)
+    {
+        for(size_t j=0; j<num_obs; j++)
+        {
+            S_lower(0,i,j) *= 0.5;
+            S_upper(num_ts-1,i,j) *= 0.5;
+        }
+    }
+    for(size_t i=0; i<num_obs; i++)
+    {
+        S_lower(0,i,i) += 1.0; // add identity
+        S_upper(num_ts-1,i,i) += 1.0; // add identity
+    } // S = 1-\pm*dt*S_0
+
+    lu = gsl_matrix_alloc(num_obs, num_obs);
+    permutation = gsl_permutation_alloc(num_obs);
+    inv = gsl_matrix_alloc(num_obs, num_obs);
+
+    tensor<double,2> inverse_lower({num_obs,num_obs});
+    for(size_t i=0; i<num_obs; i++)
+    {
+        for(size_t j=0; j<num_obs; j++)
+        {
+            gsl_matrix_set(lu,i,j,S_lower(0,i,j));
+        }
+    }
+    gsl_linalg_LU_decomp(lu, permutation, &signum);
+    gsl_linalg_LU_invert(lu, permutation, inv);
+    inverse_lower << *inv->data;
+
+    tensor<double,2> inverse_upper({num_obs,num_obs});
+    for(size_t i=0; i<num_obs; i++)
+    {
+        for(size_t j=0; j<num_obs; j++)
+        {
+            gsl_matrix_set(lu,i,j,S_upper(num_ts-1,i,j));
+        }
+    }
+    gsl_linalg_LU_decomp(lu, permutation, &signum);
+    gsl_linalg_LU_invert(lu, permutation, inv);
+    inverse_upper << *inv->data;
+
+    gsl_permutation_free(permutation);
+    gsl_matrix_free(lu);
+    gsl_matrix_free(inv);
+
+    tensor<double, 3> J({shape0,num_obs,num_obs},0.0);
+    tensor<double,2> buffer({num_obs,num_obs});
+    for(size_t tau=0;tau<num_ts;tau++)
+    {
+        buffer.init(0.0);
+        for(size_t r=1;r<=tau;r++)
+        {
+            for(size_t i=0;i<num_obs;i++)
+            {
+                for(size_t j=0;j<num_obs;j++)
+                {
+                    for(size_t k=0;k<num_obs;k++)
+                    {
+                        buffer(i,j) += J(num_ts-1+tau-r,i,k)*S_lower(r,k,j); // RUN-TIME CRITICAL
+                    }
+                }
+            }
+        }
+        for(size_t i=0;i<num_obs;i++)
+        {
+            for(size_t j=0;j<num_obs;j++)
+            {
+                J(num_ts-1+tau,i,j) = 0.0;
+                for(size_t k=0;k<num_obs;k++)
+                {
+                    J(num_ts-1+tau,i,j) += (j0(num_ts-1+tau,i,k)-buffer(i,k))*inverse_lower(k,j);
+                }
+            }
+        }
+    }
+    S_lower.clear();
+    for(size_t tau=0;tau<num_ts;tau++)
+    {
+        buffer.init(0.0);
+        for(size_t r=1;r<=tau;r++)
+        {
+            for(size_t i=0;i<num_obs;i++)
+            {
+                for(size_t j=0;j<num_obs;j++)
+                {
+                    for(size_t k=0;k<num_obs;k++)
+                    {
+                        buffer(i,j) += J(num_ts-1-(tau-r),i,k)*S_upper(num_ts-1-r,k,j); // RUN-TIME CRITICAL
+                    }
+                }
+            }
+        }
+        for(size_t i=0;i<num_obs;i++)
+        {
+            for(size_t j=0;j<num_obs;j++)
+            {
+                J(num_ts-1-tau,i,j) = 0.0;
+                for(size_t k=0;k<num_obs;k++)
+                {
+                    J(num_ts-1-tau,i,j) += (j0(num_ts-1-tau,i,k)-buffer(i,k))*inverse_upper(k,j);
+                }
+            }
+        }
+    }
+    S_upper.clear();
+    j0.clear();
+
+    tensor<double, 3> K;
+    K=diffFront(J,dt);
+
+    return K;
+}
+
 tensor<double,3> KernelMethods::diffTrajectories(tensor<double,3> &trajectories, double dt, bool darboux_sum)
 {
     size_t num_traj = trajectories.shape[0];
@@ -476,7 +641,7 @@ tensor<double,3> KernelMethods::diffTrajectories(tensor<double,3> &trajectories,
     return diff;
 };
 
-tensor<double,3> KernelMethods::diffCorrDiag(tensor<double,3> &corr_diag, double dt)
+tensor<double,3> KernelMethods::diffFront(tensor<double,3> &corr_diag, double dt)
 {
     size_t num_ts = corr_diag.shape[0];
     size_t num_obs   = corr_diag.shape[1];
@@ -549,11 +714,59 @@ tensor<double,3> KernelMethods::matInverse(tensor<double,3> &mat)
     return result;
 }
 
+tensor<double,2> KernelMethods::getDrift(tensor<double,3> &correlation, double dt)
+{
+    size_t num_obs = correlation.shape[1];
+    size_t num_ts = (correlation.shape[0]-1)/2;
+
+    // diff
+    tensor<double,2> diff({num_obs,num_obs});
+    for(size_t k=0;k<num_obs;k++)
+    {
+        for(size_t l=0;l<num_obs;l++)
+        {
+            diff(k,l)=(correlation(num_ts,k,l)-correlation(num_ts-2,l,k))/(2*dt);
+        }
+    }
+
+    // invert
+    tensor<double,2> inverse({num_obs,num_obs});
+    gsl_matrix *lu = gsl_matrix_alloc(num_obs, num_obs);
+    gsl_permutation *permutation = gsl_permutation_alloc(num_obs);
+    int signum;
+    gsl_matrix *inv = gsl_matrix_alloc(num_obs, num_obs);
+    for(size_t i=0; i<num_obs; i++)
+    {
+        for(size_t j=0; j<num_obs; j++)
+        {
+            gsl_matrix_set(lu,i,j,correlation(num_ts-1,i,j));
+        }
+    }
+    gsl_linalg_LU_decomp(lu, permutation, &signum);
+    gsl_linalg_LU_invert(lu, permutation, inv);
+    inverse << *inv->data;
+    gsl_permutation_free(permutation);
+    gsl_matrix_free(lu);
+    gsl_matrix_free(inv);
+
+    tensor<double,2> drift({num_obs,num_obs},0.0);
+    for(size_t i=0; i<num_obs; i++)
+    {
+        for(size_t j=0; j<num_obs; j++)
+        {
+            for(size_t k=0; k< num_obs; k++)
+            {
+                drift(i,j) += diff(i,k)*inverse(k,j);
+            }
+        }
+    }
+    return drift;
+}
+
 tensor<double,3> KernelMethods::getDrift(tensor<double,4> &correlation, double dt)
 {
     size_t num_ts = correlation.shape[0];
     size_t num_obs = correlation.shape[1];
-
     tensor<double,3> diff_diag({num_ts,num_obs,num_obs});
     tensor<double,3> diag_inverse(diff_diag.shape);
     for(size_t t=0;t<num_ts;t++)
@@ -567,7 +780,7 @@ tensor<double,3> KernelMethods::getDrift(tensor<double,4> &correlation, double d
         }
     }
     diag_inverse=diff_diag;
-    diff_diag=diffCorrDiag(diff_diag,dt);
+    diff_diag=diffFront(diff_diag,dt);
     diag_inverse=matInverse(diag_inverse);
 
     tensor<double,3> drift(diff_diag.shape);
