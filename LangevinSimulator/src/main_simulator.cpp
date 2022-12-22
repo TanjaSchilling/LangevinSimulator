@@ -22,13 +22,16 @@ If not, see <https://www.gnu.org/licenses/>.
 
 #include "InputOutput.hpp"
 #include "RandomForceGenerator.hpp"
-#include "parameter_handler.hpp"
 #include "RK4.hpp"
+
+#include "parameter_handler.hpp"
 #include "TensorUtils.hpp"
 
 #include <iostream>
 #include <vector>
 #include <filesystem>
+
+#include <gsl/gsl_math.h>
 #include <gsl/gsl_blas.h>
 
 using namespace std;

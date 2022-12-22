@@ -20,17 +20,17 @@ You should have received a copy of the GNU General Public License along with Lan
 If not, see <https://www.gnu.org/licenses/>.
 **/
 
+#include "InputOutput.hpp"
+#include "KernelMethods.hpp"
+
+#include "parameter_handler.hpp"
+#include "TensorUtils.hpp"
+
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <cmath>
 #include <filesystem>
-
-#include "parameter_handler.hpp"
-#include "InputOutput.hpp"
-#include "KernelMethods.hpp"
-
-#include "TensorUtils.hpp"
 
 using namespace std;
 

@@ -21,14 +21,16 @@ If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "KernelMethods.hpp"
+#include "InputOutput.hpp"
 
 #include <cstring>
 #include <iostream>
-#include <gsl/gsl_permutation.h>
-#include <gsl/gsl_linalg.h>
 #include <filesystem>
 
-#include "InputOutput.hpp"
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_permutation.h>
+#include <gsl/gsl_linalg.h>
 
 using namespace std;
 using namespace TensorUtils;
