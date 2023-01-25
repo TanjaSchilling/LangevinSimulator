@@ -717,7 +717,8 @@ tensor<double,3> KernelMethods::matInverse(tensor<double,3> &mat)
 tensor<double,2> KernelMethods::getDrift(tensor<double,3> &correlation, double dt)
 {
     size_t num_obs = correlation.shape[1];
-    size_t num_ts = (correlation.shape[0]-1)/2;
+    size_t num_ts = (correlation.shape[0]+1)/2;
+    cout << num_ts << endl;
 
     // diff
     tensor<double,2> diff({num_obs,num_obs});
@@ -725,7 +726,8 @@ tensor<double,2> KernelMethods::getDrift(tensor<double,3> &correlation, double d
     {
         for(size_t l=0;l<num_obs;l++)
         {
-            diff(k,l)=(correlation(num_ts,k,l)-correlation(num_ts-2,l,k))/(2*dt);
+            diff(k,l)=(correlation(num_ts,k,l)-correlation(num_ts-2,k,l))/(2*dt);
+            cout << diff(k,l) << endl;
         }
     }
 
