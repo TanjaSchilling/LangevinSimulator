@@ -396,6 +396,17 @@ int main(int argc, char** argv) {
             }
             cout << "Write correlation function: " << out_path/"correlation_stationary.f64" << endl;
             corr_out.write("correlation_stationary.f64",out_path);
+            if(txt_out)
+            {
+                double dt = times[1]-times[0];
+                TensorUtils::tensor<double,1> new_times({2*times.size()-1});
+                for(size_t t=0;t<times.size();t++)
+                {
+                    new_times[times.size()-1+t] = +dt*t;
+                    new_times[times.size()-1-t] = -dt*t;
+                }
+                InputOutput::write(new_times,corr_out,out_path/"correlation_stationary.txt");
+            }
         }
     }
 
