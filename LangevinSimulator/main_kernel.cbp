@@ -35,6 +35,7 @@
 			<Add option="-DENABLE_INTEGRAL_TYPES=0" />
 			<Add directory="../ParameterHandler/src" />
 			<Add directory="../TensorUtils/include" />
+			<Add directory="../fftbw" />
 		</Compiler>
 		<Linker>
 			<Add library="gsl" />
@@ -50,6 +51,8 @@
 		<Unit filename="../TensorUtils/include/TensorUtils.hpp" />
 		<Unit filename="../TensorUtils/src/TensorBase.cpp" />
 		<Unit filename="../TensorUtils/src/TensorDerived.cpp" />
+		<Unit filename="../fftbw/FourierTransforms.cpp" />
+		<Unit filename="../fftbw/FourierTransforms.hpp" />
 		<Unit filename="src/InputOutput.cpp" />
 		<Unit filename="src/InputOutput.hpp" />
 		<Unit filename="src/KernelMethods.cpp" />

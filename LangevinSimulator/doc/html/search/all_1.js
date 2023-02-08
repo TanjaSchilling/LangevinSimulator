@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['f_1',['f',['../classRK4.html#a40d2e17135b036ec74da27fc2f4064f6',1,'RK4']]]
+  ['difffront_1',['diffFront',['../namespaceKernelMethods.html#af3e510c980539d1744bacd8b19e931df',1,'KernelMethods']]],
+  ['difftrajectories_2',['diffTrajectories',['../namespaceKernelMethods.html#a9f7f9d7569ab2dda98588eba53904b22',1,'KernelMethods']]]
 ];

@@ -27,6 +27,7 @@ If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_matrix.h>
+#include <filesystem>
 
 #include "TensorUtils.hpp"
 
@@ -37,27 +38,27 @@ class RandomForceGenerator
 {
     public:
         /*!
-            \brief Constructor expects the mean and covariance matrix of the fluctuating forces.
-
-            After the RandomForceGenerator has been constructed, the fluctuating forces can be drawn by calling \ref pull_multivariate_gaussian().
-
-            \param average Mean value of the fluctuating forces as a one-dimensional tensor: `ff_average[num_obs*t+o]=<ff(t,o)>`.
-            \param cov Covariance matrix of the fluctuating forces `ff_cov(num_obs*t1+o1,num_obs*t2+o2)=<ff(t1,o1)*ff(t2,o2)>-<ff(t1,o1)>*<ff(t2,o2)>`.
-            \param num_obs Number of observables.
+            \brief Returns an uninitialized instantiation, but sets up the random number generator.
         */
         RandomForceGenerator();
         virtual ~RandomForceGenerator();
 
-        void init_cov(TensorUtils::tensor<double,2> &ff_average, TensorUtils::tensor<double,4> &ff_cov, std::string out_folder);
+        /*!
+            \brief Computes and writes the rotation matrix for a given covariance matrix. On exit, the RandomForceGenerator is initialized.
+        */
+        void init_cov(TensorUtils::tensor<double,2> &ff_average, TensorUtils::tensor<double,4> &ff_cov, std::filesystem::path out_path);
+
+        /*!
+            \brief Initializes the RandomForceGenerator with a previously computed rotation matrix.
+        */
         void init_decomp(TensorUtils::tensor<double,2> &ff_average, TensorUtils::tensor<double,4> &ff_decomp);
 
         /*!
             \brief Draw multivariate normal distributed fluctuating forces.
 
             \return Returns the fluctuating forces `rand_ff = Mz`.
-            The matrix `M` is given by `M=UD^{1/2}`, where `C=UDU^{-1}` is the spectral decomposition of the covariance matrix
-            and `z` contains independent, standard normal distributed numbers.
-
+            The rotation matrix `M` is given by `M=UD^{1/2}`, where `C=UDU^{-1}` is the spectral decomposition of the covariance matrix
+            and `z` contains independent, standard normal distributed random numbers.
         */
         TensorUtils::tensor<double,2> pull_multivariate_gaussian();
 

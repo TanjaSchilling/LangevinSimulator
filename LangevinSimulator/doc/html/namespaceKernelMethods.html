@@ -73,22 +73,78 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:ad821f0f43b35e6b596b73bd33801cbf8"><td class="memItemLeft" align="right" valign="top"><a id="ad821f0f43b35e6b596b73bd33801cbf8"></a>
+TensorUtils::tensor&lt; double, 1 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#ad821f0f43b35e6b596b73bd33801cbf8">shiftTrajectories</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;traj)</td></tr>
+<tr class="memdesc:ad821f0f43b35e6b596b73bd33801cbf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subtracts and returns the average of the trajectories. <br /></td></tr>
+<tr class="separator:ad821f0f43b35e6b596b73bd33801cbf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac797713683b31549122ea490b9547c19"><td class="memItemLeft" align="right" valign="top"><a id="ac797713683b31549122ea490b9547c19"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#ac797713683b31549122ea490b9547c19">mollifyTrajectories</a> (TensorUtils::tensor&lt; double, 1 &gt; &amp;times, TensorUtils::tensor&lt; double, 3 &gt; &amp;traj, size_t mollifier_width)</td></tr>
+<tr class="memdesc:ac797713683b31549122ea490b9547c19"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fast convolution with a mollifier of sample-width <code>2*mollifier_width-1</code>. <br /></td></tr>
+<tr class="separator:ac797713683b31549122ea490b9547c19"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09ec719f64d579526bd8805d7bf53d3f"><td class="memItemLeft" align="right" valign="top"><a id="a09ec719f64d579526bd8805d7bf53d3f"></a>
+TensorUtils::tensor&lt; double, 4 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a09ec719f64d579526bd8805d7bf53d3f">getCorrelationFunction</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;traj, bool unbiased=false)</td></tr>
+<tr class="memdesc:a09ec719f64d579526bd8805d7bf53d3f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the cross-correlation matrix of the observable <code>C(t,i,s,j)=E[traj(n,t,i)*traj(n,s,j)]</code> for all times <code>t</code> and <code>s</code>. <br /></td></tr>
+<tr class="separator:a09ec719f64d579526bd8805d7bf53d3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf58618544386380bb8bdac1c757b52e"><td class="memItemLeft" align="right" valign="top"><a id="acf58618544386380bb8bdac1c757b52e"></a>
+TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#acf58618544386380bb8bdac1c757b52e">getStationaryCorrelation</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;traj, bool unbiased=false)</td></tr>
+<tr class="memdesc:acf58618544386380bb8bdac1c757b52e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the cross-correlation matrix of a stationary process <code>C(num_ts-1+t-s,i,j)=E[traj(n,t,i)*traj(n,s,j)]</code> for all time differences <code>t-s=-(N-1),...,+(N-1)</code>. <br /></td></tr>
+<tr class="separator:acf58618544386380bb8bdac1c757b52e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a819afc849bde7ae4b6d879400824fc0a"><td class="memItemLeft" align="right" valign="top"><a id="a819afc849bde7ae4b6d879400824fc0a"></a>
+TensorUtils::tensor&lt; double, 2 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a819afc849bde7ae4b6d879400824fc0a">subAverage</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;traj)</td></tr>
+<tr class="memdesc:a819afc849bde7ae4b6d879400824fc0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subtracts and returns the average trajectory. <br /></td></tr>
+<tr class="separator:a819afc849bde7ae4b6d879400824fc0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad3216af78f51ca9f69e1185512672c56"><td class="memItemLeft" align="right" valign="top"><a id="ad3216af78f51ca9f69e1185512672c56"></a>
+TensorUtils::tensor&lt; double, 4 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#ad3216af78f51ca9f69e1185512672c56">calcLowerBlockTriangularInverse</a> (TensorUtils::tensor&lt; double, 4 &gt; &amp;src)</td></tr>
+<tr class="memdesc:ad3216af78f51ca9f69e1185512672c56"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the inverse of a lower block triangular matrix. <br /></td></tr>
+<tr class="separator:ad3216af78f51ca9f69e1185512672c56"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2bfc339713b00423bd27be7ab13cf8e6"><td class="memItemLeft" align="right" valign="top"><a id="a2bfc339713b00423bd27be7ab13cf8e6"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a2bfc339713b00423bd27be7ab13cf8e6">getMemoryKernel</a> (gsl_matrix *kernel, gsl_matrix *corr, size_t const num_ts, size_t const num_obs, double const dt)</td></tr>
-<tr class="memdesc:a2bfc339713b00423bd27be7ab13cf8e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the memory kernel for a given correlation function. <br /></td></tr>
+<tr class="memdesc:a2bfc339713b00423bd27be7ab13cf8e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the non-stationary memory kernel for a given correlation function. <br /></td></tr>
 <tr class="separator:a2bfc339713b00423bd27be7ab13cf8e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acc05c6990735cc17b12ca8f96ef839c8"><td class="memItemLeft" align="right" valign="top">TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#acc05c6990735cc17b12ca8f96ef839c8">diffTrajectories</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;trajectories, double dt)</td></tr>
-<tr class="memdesc:acc05c6990735cc17b12ca8f96ef839c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the derivative of all trajectories using the symmetric difference quotient.  <a href="namespaceKernelMethods.html#acc05c6990735cc17b12ca8f96ef839c8">More...</a><br /></td></tr>
-<tr class="separator:acc05c6990735cc17b12ca8f96ef839c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a587761ad5d4f3f815e68211a5c4466f4"><td class="memItemLeft" align="right" valign="top"><a id="a587761ad5d4f3f815e68211a5c4466f4"></a>
+TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a587761ad5d4f3f815e68211a5c4466f4">getMemoryKernel</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;correlation, double dt)</td></tr>
+<tr class="memdesc:a587761ad5d4f3f815e68211a5c4466f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the stationary memory kernel for a given correlation function. <br /></td></tr>
+<tr class="separator:a587761ad5d4f3f815e68211a5c4466f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f7f9d7569ab2dda98588eba53904b22"><td class="memItemLeft" align="right" valign="top">TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a9f7f9d7569ab2dda98588eba53904b22">diffTrajectories</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;trajectories, double dt, bool darboux_sum)</td></tr>
+<tr class="memdesc:a9f7f9d7569ab2dda98588eba53904b22"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the derivative of all trajectories using the symmetric difference quotient.  <a href="namespaceKernelMethods.html#a9f7f9d7569ab2dda98588eba53904b22">More...</a><br /></td></tr>
+<tr class="separator:a9f7f9d7569ab2dda98588eba53904b22"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7fbe4e3238261b73f17b247ca978669c"><td class="memItemLeft" align="right" valign="top">TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a7fbe4e3238261b73f17b247ca978669c">matInverse</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;mat)</td></tr>
 <tr class="memdesc:a7fbe4e3238261b73f17b247ca978669c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block-wise matrix inversion.  <a href="namespaceKernelMethods.html#a7fbe4e3238261b73f17b247ca978669c">More...</a><br /></td></tr>
 <tr class="separator:a7fbe4e3238261b73f17b247ca978669c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae1f4a6f8db041497a5ce59bd8a1c2f92"><td class="memItemLeft" align="right" valign="top">TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#ae1f4a6f8db041497a5ce59bd8a1c2f92">getFluctuatingForce</a> (TensorUtils::tensor&lt; double, 4 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 3 &gt; &amp;trajectories, TensorUtils::tensor&lt; double, 1 &gt; &amp;times, std::string out_folder, bool txt_out)</td></tr>
-<tr class="memdesc:ae1f4a6f8db041497a5ce59bd8a1c2f92"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the drift term and the fluctuating forces.  <a href="namespaceKernelMethods.html#ae1f4a6f8db041497a5ce59bd8a1c2f92">More...</a><br /></td></tr>
-<tr class="separator:ae1f4a6f8db041497a5ce59bd8a1c2f92"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a67a1302a3bf6b3d56b51ca3ffaa9a0b6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a67a1302a3bf6b3d56b51ca3ffaa9a0b6">writeCovarianceMatrix</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;ff, std::string folder)</td></tr>
-<tr class="memdesc:a67a1302a3bf6b3d56b51ca3ffaa9a0b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the covariance matrix of the fluctuating forces as required from <a class="el" href="classRandomForceGenerator.html">RandomForceGenerator</a>.  <a href="namespaceKernelMethods.html#a67a1302a3bf6b3d56b51ca3ffaa9a0b6">More...</a><br /></td></tr>
-<tr class="separator:a67a1302a3bf6b3d56b51ca3ffaa9a0b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3e510c980539d1744bacd8b19e931df"><td class="memItemLeft" align="right" valign="top"><a id="af3e510c980539d1744bacd8b19e931df"></a>
+TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#af3e510c980539d1744bacd8b19e931df">diffFront</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;correlation, double dt)</td></tr>
+<tr class="memdesc:af3e510c980539d1744bacd8b19e931df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Differentiate with respect to the first index using the symmetric difference quotient. For the first and last index, the one-sided difference quotient is used. <br /></td></tr>
+<tr class="separator:af3e510c980539d1744bacd8b19e931df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ba49a26d7b715592af9f42bece01990"><td class="memItemLeft" align="right" valign="top"><a id="a5ba49a26d7b715592af9f42bece01990"></a>
+TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a5ba49a26d7b715592af9f42bece01990">getDrift</a> (TensorUtils::tensor&lt; double, 4 &gt; &amp;correlation, double dt)</td></tr>
+<tr class="memdesc:a5ba49a26d7b715592af9f42bece01990"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the drift term for a given non-stationary correlation function. <br /></td></tr>
+<tr class="separator:a5ba49a26d7b715592af9f42bece01990"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a560d4a9d549fe245451ccfe98caa6231"><td class="memItemLeft" align="right" valign="top"><a id="a560d4a9d549fe245451ccfe98caa6231"></a>
+TensorUtils::tensor&lt; double, 2 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a560d4a9d549fe245451ccfe98caa6231">getDrift</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;correlation, double dt)</td></tr>
+<tr class="memdesc:a560d4a9d549fe245451ccfe98caa6231"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the drift term for a given stationary correlation function. <br /></td></tr>
+<tr class="separator:a560d4a9d549fe245451ccfe98caa6231"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c3fb46dd61961f0858efdecd794f68c"><td class="memItemLeft" align="right" valign="top"><a id="a9c3fb46dd61961f0858efdecd794f68c"></a>
+TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a9c3fb46dd61961f0858efdecd794f68c">getFluctuatingForce</a> (TensorUtils::tensor&lt; double, 4 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 3 &gt; &amp;drift, TensorUtils::tensor&lt; double, 3 &gt; &amp;trajectories, TensorUtils::tensor&lt; double, 1 &gt; &amp;times, bool darboux_sum)</td></tr>
+<tr class="memdesc:a9c3fb46dd61961f0858efdecd794f68c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the fluctuating forces for each trajectory for the non-stationary case. <br /></td></tr>
+<tr class="separator:a9c3fb46dd61961f0858efdecd794f68c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a301ef4cc0175ba7518fd790eb0dde6fd"><td class="memItemLeft" align="right" valign="top"><a id="a301ef4cc0175ba7518fd790eb0dde6fd"></a>
+TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a301ef4cc0175ba7518fd790eb0dde6fd">getFluctuatingForce</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;drift, TensorUtils::tensor&lt; double, 3 &gt; &amp;trajectories, TensorUtils::tensor&lt; double, 1 &gt; &amp;times, bool darboux_sum)</td></tr>
+<tr class="memdesc:a301ef4cc0175ba7518fd790eb0dde6fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the fluctuating forces for each trajectory for the stationary case. <br /></td></tr>
+<tr class="separator:a301ef4cc0175ba7518fd790eb0dde6fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25d1b266aef8b1f0a194ecbab501e489"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a25d1b266aef8b1f0a194ecbab501e489">writeCovarianceMatrix</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;ff, std::filesystem::path out_path, bool stationary=false)</td></tr>
+<tr class="memdesc:a25d1b266aef8b1f0a194ecbab501e489"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the average and covariance matrix of the fluctuating forces as required from <a class="el" href="classRandomForceGenerator.html">RandomForceGenerator</a>.  <a href="namespaceKernelMethods.html#a25d1b266aef8b1f0a194ecbab501e489">More...</a><br /></td></tr>
+<tr class="separator:a25d1b266aef8b1f0a194ecbab501e489"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa472668e209c51d73d74aef44be3e7d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#aaa472668e209c51d73d74aef44be3e7d">writeExtendedCovarianceMatrix</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;traj, TensorUtils::tensor&lt; double, 3 &gt; &amp;ff, std::filesystem::path out_path, bool stationary=false)</td></tr>
+<tr class="memdesc:aaa472668e209c51d73d74aef44be3e7d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the average and covariance matrix of the initial values and fluctuating forces as required from <a class="el" href="classRandomForceGenerator.html">RandomForceGenerator</a> when drawing the initial values and fluctuating forces from a joint distribution.  <a href="namespaceKernelMethods.html#aaa472668e209c51d73d74aef44be3e7d">More...</a><br /></td></tr>
+<tr class="separator:aaa472668e209c51d73d74aef44be3e7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23cf303e092367e1f939484798d4422d"><td class="memItemLeft" align="right" valign="top"><a id="a23cf303e092367e1f939484798d4422d"></a>
+TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a23cf303e092367e1f939484798d4422d">simulateTrajectories</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;traj, TensorUtils::tensor&lt; double, 3 &gt; &amp;drift, TensorUtils::tensor&lt; double, 4 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 1 &gt; &amp;mean_initial_value, <a class="el" href="classRandomForceGenerator.html">RandomForceGenerator</a> &amp;rfg, double dt, bool shift, bool gaussian_init_val, bool darboux_sum, size_t num_sim, std::filesystem::path out_path)</td></tr>
+<tr class="memdesc:a23cf303e092367e1f939484798d4422d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws the fluctuating forces and simulates new trajectories for the non-stationary case. <br /></td></tr>
+<tr class="separator:a23cf303e092367e1f939484798d4422d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20e93249b0ecd22a337379f45a25e033"><td class="memItemLeft" align="right" valign="top"><a id="a20e93249b0ecd22a337379f45a25e033"></a>
+TensorUtils::tensor&lt; double, 3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceKernelMethods.html#a20e93249b0ecd22a337379f45a25e033">simulateTrajectories</a> (TensorUtils::tensor&lt; double, 3 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;drift, TensorUtils::tensor&lt; double, 3 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 1 &gt; &amp;mean_initial_value, <a class="el" href="classRandomForceGenerator.html">RandomForceGenerator</a> &amp;rfg, double dt, bool shift, bool gaussian_init_val, bool darboux_sum, size_t num_sim, std::filesystem::path out_path)</td></tr>
+<tr class="memdesc:a20e93249b0ecd22a337379f45a25e033"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draws the fluctuating forces and simulates new trajectories for the stationary case. <br /></td></tr>
+<tr class="separator:a20e93249b0ecd22a337379f45a25e033"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This namespace provides functions to compute the memory kernel, drift and fluctuating forces. </p>
@@ -100,8 +156,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="name
 <p>LangevinSimulator is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.</p>
 <p>You should have received a copy of the GNU General Public License along with LangevinSimulator. If not, see <a href="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</a>. </p>
 </div><h2 class="groupheader">Function Documentation</h2>
-<a id="acc05c6990735cc17b12ca8f96ef839c8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acc05c6990735cc17b12ca8f96ef839c8">&#9670;&nbsp;</a></span>diffTrajectories()</h2>
+<a id="a9f7f9d7569ab2dda98588eba53904b22"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f7f9d7569ab2dda98588eba53904b22">&#9670;&nbsp;</a></span>diffTrajectories()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -116,7 +172,13 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="name
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>dt</em>&#160;</td>
+          <td class="paramname"><em>dt</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>darboux_sum</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -128,56 +190,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="name
 
 <p>Computes the derivative of all trajectories using the symmetric difference quotient. </p>
 <p>At the boundary the one-sided difference quotient is used. </p>
-
-</div>
-</div>
-<a id="ae1f4a6f8db041497a5ce59bd8a1c2f92"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae1f4a6f8db041497a5ce59bd8a1c2f92">&#9670;&nbsp;</a></span>getFluctuatingForce()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">TensorUtils::tensor&lt;double,3&gt; KernelMethods::getFluctuatingForce </td>
-          <td>(</td>
-          <td class="paramtype">TensorUtils::tensor&lt; double, 4 &gt; &amp;&#160;</td>
-          <td class="paramname"><em>kernel</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">TensorUtils::tensor&lt; double, 3 &gt; &amp;&#160;</td>
-          <td class="paramname"><em>trajectories</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">TensorUtils::tensor&lt; double, 1 &gt; &amp;&#160;</td>
-          <td class="paramname"><em>times</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>out_folder</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>txt_out</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Computes the drift term and the fluctuating forces. </p>
-<p>The drift term is written to 'out_folder/drift.f64' as binary. If <code>txt_out</code>, the drift term is written as text file as well.</p>
-<dl class="section return"><dt>Returns</dt><dd>Returns the fluctuating forces for each trajectory. </dd></dl>
 
 </div>
 </div>
@@ -202,8 +214,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="name
 
 </div>
 </div>
-<a id="a67a1302a3bf6b3d56b51ca3ffaa9a0b6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a67a1302a3bf6b3d56b51ca3ffaa9a0b6">&#9670;&nbsp;</a></span>writeCovarianceMatrix()</h2>
+<a id="a25d1b266aef8b1f0a194ecbab501e489"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a25d1b266aef8b1f0a194ecbab501e489">&#9670;&nbsp;</a></span>writeCovarianceMatrix()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -217,8 +229,14 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="name
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::string&#160;</td>
-          <td class="paramname"><em>folder</em>&#160;</td>
+          <td class="paramtype">std::filesystem::path&#160;</td>
+          <td class="paramname"><em>out_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>stationary</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -228,8 +246,51 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="name
       </table>
 </div><div class="memdoc">
 
-<p>Computes the covariance matrix of the fluctuating forces as required from <a class="el" href="classRandomForceGenerator.html">RandomForceGenerator</a>. </p>
-<p>The covariance matrix is written to <code>folder/cov.64</code>. </p>
+<p>Computes the average and covariance matrix of the fluctuating forces as required from <a class="el" href="classRandomForceGenerator.html">RandomForceGenerator</a>. </p>
+<p>The average fluctuating forces are written to <code>out_path/ff_average.f64</code>. The covariance matrix is written to <code>out_path/ff_cov.f64</code> or <code>out_path/ff_cov_stationary.f64</code> in the stationary case. </p>
+
+</div>
+</div>
+<a id="aaa472668e209c51d73d74aef44be3e7d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa472668e209c51d73d74aef44be3e7d">&#9670;&nbsp;</a></span>writeExtendedCovarianceMatrix()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void KernelMethods::writeExtendedCovarianceMatrix </td>
+          <td>(</td>
+          <td class="paramtype">TensorUtils::tensor&lt; double, 3 &gt; &amp;&#160;</td>
+          <td class="paramname"><em>traj</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">TensorUtils::tensor&lt; double, 3 &gt; &amp;&#160;</td>
+          <td class="paramname"><em>ff</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::filesystem::path&#160;</td>
+          <td class="paramname"><em>out_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>stationary</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Computes the average and covariance matrix of the initial values and fluctuating forces as required from <a class="el" href="classRandomForceGenerator.html">RandomForceGenerator</a> when drawing the initial values and fluctuating forces from a joint distribution. </p>
+<p>The average initial values and fluctuating forces are written to <code>out_path/ff_average.f64</code>. The covariance matrix of initial values and fluctuating forces is written to <code>out_path/ff_cov.f64</code>. In the stationary case, the covariance matrix of the fluctuating forces is written to <code>out_path/ff_cov_stationary.f64</code> and the covariance between the initial values and fluctuating forces is written to <code>out_path/ff_cov_extended.f64</code>. </p>
 
 </div>
 </div>

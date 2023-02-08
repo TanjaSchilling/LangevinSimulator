@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['poptimes_9',['popTimes',['../namespaceInputOutput.html#a9fc065ebeb2f62c8fd4451b236b4cdfd',1,'InputOutput']]],
-  ['process_10',['process',['../classRK4.html#a96dd8b686f5a4ff82bb9caf63ecf1f60',1,'RK4']]],
-  ['pull_5fmultivariate_5fgaussian_11',['pull_multivariate_gaussian',['../classRandomForceGenerator.html#a8a5fbe83babecdbb36facb4a09a88a19',1,'RandomForceGenerator']]]
+  ['matinverse_15',['matInverse',['../namespaceKernelMethods.html#a7fbe4e3238261b73f17b247ca978669c',1,'KernelMethods']]],
+  ['mollifytrajectories_16',['mollifyTrajectories',['../namespaceKernelMethods.html#ac797713683b31549122ea490b9547c19',1,'KernelMethods']]]
 ];

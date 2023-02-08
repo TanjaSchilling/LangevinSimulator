@@ -80,6 +80,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae850eb60d0ec531655b6888d8ef26d5d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRK4.html#ae850eb60d0ec531655b6888d8ef26d5d">integrate</a> (double dt, TensorUtils::tensor&lt; double, 3 &gt; &amp;drift, TensorUtils::tensor&lt; double, 4 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</td></tr>
 <tr class="memdesc:ae850eb60d0ec531655b6888d8ef26d5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Integrates the equation of motions for a given realization of the fluctuating force <code>rand_ff</code> using the classical Runge-Kutta method.  <a href="classRK4.html#ae850eb60d0ec531655b6888d8ef26d5d">More...</a><br /></td></tr>
 <tr class="separator:ae850eb60d0ec531655b6888d8ef26d5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afff8d87bdb6199621375b622910307d4"><td class="memItemLeft" align="right" valign="top"><a id="afff8d87bdb6199621375b622910307d4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRK4.html#afff8d87bdb6199621375b622910307d4">integrate</a> (double dt, TensorUtils::tensor&lt; double, 2 &gt; &amp;drift, TensorUtils::tensor&lt; double, 3 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</td></tr>
+<tr class="memdesc:afff8d87bdb6199621375b622910307d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overloaded function for the stationary case. <br /></td></tr>
+<tr class="separator:afff8d87bdb6199621375b622910307d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -87,9 +91,17 @@ Protected Member Functions</h2></td></tr>
 TensorUtils::tensor&lt; double, 1 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRK4.html#a40d2e17135b036ec74da27fc2f4064f6">f</a> (size_t n, double dt, TensorUtils::tensor&lt; double, 3 &gt; &amp;drift, TensorUtils::tensor&lt; double, 4 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</td></tr>
 <tr class="memdesc:a40d2e17135b036ec74da27fc2f4064f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the time-derivative of the observable &lsquo;A&rsquo;(t)=:f(t,A(t))<code>, where</code>t=n*dt`. <br /></td></tr>
 <tr class="separator:a40d2e17135b036ec74da27fc2f4064f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a54163ecb3c5ebe06befb0133b3c311df"><td class="memItemLeft" align="right" valign="top"><a id="a54163ecb3c5ebe06befb0133b3c311df"></a>
+TensorUtils::tensor&lt; double, 1 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRK4.html#a54163ecb3c5ebe06befb0133b3c311df">f</a> (size_t n, double dt, TensorUtils::tensor&lt; double, 2 &gt; &amp;drift, TensorUtils::tensor&lt; double, 3 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</td></tr>
+<tr class="memdesc:a54163ecb3c5ebe06befb0133b3c311df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overloaded function for the stationary case. <br /></td></tr>
+<tr class="separator:a54163ecb3c5ebe06befb0133b3c311df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a96dd8b686f5a4ff82bb9caf63ecf1f60"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRK4.html#a96dd8b686f5a4ff82bb9caf63ecf1f60">process</a> (size_t n, double dt, TensorUtils::tensor&lt; double, 3 &gt; &amp;drift, TensorUtils::tensor&lt; double, 4 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</td></tr>
 <tr class="memdesc:a96dd8b686f5a4ff82bb9caf63ecf1f60"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes a classcal Runge-Kutta step with step-size <code>2dt</code>.  <a href="classRK4.html#a96dd8b686f5a4ff82bb9caf63ecf1f60">More...</a><br /></td></tr>
 <tr class="separator:a96dd8b686f5a4ff82bb9caf63ecf1f60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29866adb9fab801ea808dbd9f5f76efe"><td class="memItemLeft" align="right" valign="top"><a id="a29866adb9fab801ea808dbd9f5f76efe"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRK4.html#a29866adb9fab801ea808dbd9f5f76efe">process</a> (size_t n, double dt, TensorUtils::tensor&lt; double, 2 &gt; &amp;drift, TensorUtils::tensor&lt; double, 3 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</td></tr>
+<tr class="memdesc:a29866adb9fab801ea808dbd9f5f76efe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overloaded function for the stationary case. <br /></td></tr>
+<tr class="separator:a29866adb9fab801ea808dbd9f5f76efe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This class offers routines to integrate the nsGLE using the classical Runge-Kutta method (<a class="el" href="classRK4.html" title="This class offers routines to integrate the nsGLE using the classical Runge-Kutta method (RK4).">RK4</a>). </p>

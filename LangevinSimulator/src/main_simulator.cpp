@@ -21,8 +21,7 @@ If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "InputOutput.hpp"
-#include "RandomForceGenerator.hpp"
-#include "RK4.hpp"
+#include "KernelMethods.hpp"
 
 #include "parameter_handler.hpp"
 #include "TensorUtils.hpp"
@@ -76,12 +75,6 @@ int main(int argc, char *argv[]) {
 		throw ex;
 	}
 
-	if(stationary)
-	{
-        cout << "Set 'stationary' to false. Missing implementation." << endl;
-        return 1;
-	}
-
 	cout << "PARAMETERS: " << endl;
 	cout << "num_sim" << '\t'<< num_sim << endl;
 	cout << "out_folder" << '\t'<< out_folder << endl;
@@ -92,208 +85,224 @@ int main(int argc, char *argv[]) {
 
 	filesystem::path out_path = out_folder;
 
-    tensor<double,4> kernel;
-	cout << "Load memory kernel from: " << out_path/"kernel.f64" << endl;
-    kernel.read(out_path/"kernel.f64");
-
-    tensor<double,3> drift;
-	cout << "Load drift from: " << out_path/"drift.f64" << endl;
-    drift.read(out_path/"drift.f64");
-
-	tensor<double,2> ff_average;
-	cout << "Load ff_average from: " << out_path/"ff_average.f64" << endl;
-	ff_average.read(out_path/"ff_average.f64");
-
-    tensor<double,3> trajectories;
-	cout << "Load trajectories from: " << out_path/"traj.f64" << endl;
-    trajectories.read(out_path/"traj.f64");
-
-    tensor<double,1> times;
-	cout << "Load times from: " << out_path/"times.f64" << endl;
-    times.read(out_path/"times.f64");
-
-    tensor<double,1> mean_initial_value;
-    if(shift)
+    if(!stationary)
     {
-        cout << "Load mean initial value from: " << out_path/"mean_initial_value.f64" << endl;
-        mean_initial_value.read(out_path/"mean_initial_value.f64");
-    }
+        tensor<double,4> kernel;
+        cout << "Load memory kernel from: " << out_path/"kernel.f64" << endl;
+        kernel.read(out_path/"kernel.f64");
 
-    cout << "Initialize random force generator." << endl;
-    RandomForceGenerator rfg;
-    try
-    {
-        tensor<double,4> ff_decomp;
-        cout << "Load rotation matrix from: " << out_path/"ff_decomp.f64" << endl;
-        ff_decomp.read(out_path/"ff_decomp.f64");
+        tensor<double,3> drift;
+        cout << "Load drift from: " << out_path/"drift.f64" << endl;
+        drift.read(out_path/"drift.f64");
 
-        rfg.init_decomp(ff_average,ff_decomp);
-        ff_average.clear();
-        ff_decomp.clear();
-    }
-    catch(exception &ex)
-    {
-        cout << "Unable to load rotation matrix." << endl;
+        tensor<double,2> ff_average;
+        cout << "Load ff_average from: " << out_path/"ff_average.f64" << endl;
+        ff_average.read(out_path/"ff_average.f64");
 
-        tensor<double,4> ff_cov;
-        cout << "Load covariance matrix of fluctuating forces from: " << out_path/"ff_cov.f64" << endl;
-        ff_cov.read(out_path/"ff_cov.f64");
+        tensor<double,3> trajectories;
+        cout << "Load trajectories from: " << out_path/"traj.f64" << endl;
+        trajectories.read(out_path/"traj.f64");
 
-        rfg.init_cov(ff_average,ff_cov,out_path);
-        ff_average.clear();
-        ff_cov.clear();
-    }
+        tensor<double,1> times;
+        cout << "Load times from: " << out_path/"times.f64" << endl;
+        times.read(out_path/"times.f64");
 
-    // set args
-    double dt = times[1]-times[0];
-    size_t num_traj = trajectories.shape[0];
-    size_t num_ts = trajectories.shape[1];
-    size_t num_obs = trajectories.shape[2];
-    cout << "Loaded "<< num_traj << " trajectories with " << num_ts << " timesteps and " << num_obs << " observables." << endl;
-
-    if(gaussian_init_val)
-    {
-        trajectories.clear();
-    }
-
-    tensor<double,3> sim;
-    tensor<double,3> rand_ff({num_sim,num_ts,num_obs});
-    if(darboux_sum)
-    {
-        cout << "Draw fluctuating forces." << endl;
-        kernel=kernel.transpose({0,1,3,2});
-        tensor<double,2> rand_ff_buffer;
-        filesystem::create_directories(out_path/"SIM");
-        sim.alloc({num_ts,num_obs,num_sim});
-        for(size_t n=0;n<num_sim; n++)
-        {
-            rand_ff_buffer = rfg.pull_multivariate_gaussian();
-            if(!gaussian_init_val)
-            {
-                for(size_t i=0; i<num_obs; i++)
-                {
-                    sim(0,i,n) = trajectories(n%num_traj,0,i); // set initial value
-                }
-                memcpy(&rand_ff(n),&rand_ff_buffer[0],num_ts*num_obs*sizeof(double));
-            }
-            else
-            {
-                for(size_t i=0; i<num_obs; i++)
-                {
-                    sim(0,i,n) = rand_ff_buffer(0,i); // set initial value
-                }
-                memcpy(&rand_ff(n),&rand_ff_buffer(1),num_ts*num_obs*sizeof(double));
-            }
-        }
-        cout << "Simulate trajectories." << endl;
-        gsl_matrix * out = gsl_matrix_alloc(num_obs,num_sim);
-        tensor<double,2> buff({num_obs,num_sim},0.0);
-        for(size_t t=0;t+1<num_ts;t++)
-        {
-            if(t>0)
-            {
-                gsl_matrix_const_view kernel_t1 = gsl_matrix_const_view_array(&kernel(t),t*num_obs,num_obs);
-                gsl_matrix_const_view trajectory = gsl_matrix_const_view_array(&sim[0],t*num_obs,num_sim);
-                gsl_blas_dgemm(CblasTrans,CblasNoTrans,1.0,&kernel_t1.matrix,&trajectory.matrix,0.0,out);
-                buff << *out->data;
-            }
-            buff*=dt;
-            for(size_t n=0;n<num_sim;n++)
-            {
-                for(size_t i = 0; i<num_obs; i++)
-                {
-                    for(size_t k = 0; k<num_obs; k++)
-                    {
-                        buff(i,n) += drift(t,i,k)*sim(t,k,n);
-                    }
-                    buff(i,n) += rand_ff(n,t,i);
-                }
-                for(size_t i=0;i<num_obs;i++)
-                {
-                    sim(t+1,i,n) = sim(t,i,n)+dt*buff(i,n);
-                }
-            }
-        }
-        gsl_matrix_free(out);
+        tensor<double,1> mean_initial_value;
         if(shift)
         {
-            for(size_t n=0;n<num_sim; n++)
+            cout << "Load mean initial value from: " << out_path/"mean_initial_value.f64" << endl;
+            mean_initial_value.read(out_path/"mean_initial_value.f64");
+        }
+
+        cout << "Initialize random force generator." << endl;
+        RandomForceGenerator rfg;
+        try
+        {
+            tensor<double,4> ff_decomp;
+            cout << "Load rotation matrix from: " << out_path/"ff_decomp.f64" << endl;
+            ff_decomp.read(out_path/"ff_decomp.f64");
+
+            rfg.init_decomp(ff_average,ff_decomp);
+            ff_average.clear();
+            ff_decomp.clear();
+        }
+        catch(exception &ex)
+        {
+            cout << "Unable to load rotation matrix." << endl;
+
+            tensor<double,4> ff_cov;
+            cout << "Load covariance matrix of fluctuating forces from: " << out_path/"ff_cov.f64" << endl;
+            ff_cov.read(out_path/"ff_cov.f64");
+
+            rfg.init_cov(ff_average,ff_cov,out_path);
+            ff_average.clear();
+            ff_cov.clear();
+        }
+
+        cout << "Draw fluctuating forces and simulate trajectories." << endl;
+        tensor<double,3> sim = KernelMethods::simulateTrajectories(
+            trajectories,
+            drift,
+            kernel,
+            mean_initial_value,
+            rfg,
+            times[1]-times[0],
+            shift,
+            gaussian_init_val,
+            darboux_sum,
+            num_sim,
+            out_path);
+        cout << "Write simulated trajectories: " << (out_path/"SIM")/"traj.f64" << endl;
+        sim.write("traj.f64",out_path/"SIM");
+        cout << "Write times: " << (out_path/"SIM")/"times.f64" << endl;
+        times.write("times.f64",out_path/"SIM");
+        if(txt_out)
+        {
+            tensor<double,2> sim_traj({sim.shape[1],sim.shape[2]});
+            for(size_t n=0;n<num_sim;n++)
             {
-                for(size_t t=0; t<num_ts; t++)
-                {
-                    for(size_t o=0; o<num_obs; o++)
-                    {
-                        sim(t,o,n) += mean_initial_value[o];
-                    }
-                }
+                sim_traj << sim(n);
+                InputOutput::write(times,sim_traj,(out_path/"SIM")/("sim_"+to_string(n)+".txt"));
             }
         }
-        sim=sim.transpose({2,0,1});
     }
     else
     {
-        cout << "Simulate trajectories." << endl;
-        tensor<double,2> rand_ff_buffer;
-        tensor<double,2> rand_ff_n({num_ts,num_obs});
-        tensor<double,2> simulated_trajectory({num_ts,num_obs});
-        RK4 rk4;
-        filesystem::create_directories(out_path/"SIM");
-        sim.alloc({num_sim,num_ts,num_obs});
-        for(size_t n=0;n<num_sim; n++)
-        {
+        tensor<double,3> kernel;
+        cout << "Load memory kernel from: " << out_path/"kernel_stationary.f64" << endl;
+        kernel.read(out_path/"kernel_stationary.f64");
 
-            rand_ff_buffer = rfg.pull_multivariate_gaussian();
+        tensor<double,2> drift;
+        cout << "Load drift from: " << out_path/"drift_stationary.f64" << endl;
+        drift.read(out_path/"drift_stationary.f64");
+
+        tensor<double,2> ff_average;
+        cout << "Load ff_average from: " << out_path/"ff_average.f64" << endl;
+        ff_average.read(out_path/"ff_average.f64");
+
+        tensor<double,3> trajectories;
+        cout << "Load trajectories from: " << out_path/"traj.f64" << endl;
+        trajectories.read(out_path/"traj.f64");
+
+        tensor<double,1> times;
+        cout << "Load times from: " << out_path/"times.f64" << endl;
+        times.read(out_path/"times.f64");
+
+        tensor<double,1> mean_initial_value;
+        if(shift)
+        {
+            cout << "Load mean initial value from: " << out_path/"mean_initial_value.f64" << endl;
+            mean_initial_value.read(out_path/"mean_initial_value.f64");
+        }
+
+        cout << "Initialize random force generator." << endl;
+        RandomForceGenerator rfg;
+        try
+        {
+            tensor<double,4> ff_decomp;
+            cout << "Load rotation matrix from: " << out_path/"ff_decomp.f64" << endl;
+            ff_decomp.read(out_path/"ff_decomp.f64");
+
+            rfg.init_decomp(ff_average,ff_decomp);
+            ff_average.clear();
+            ff_decomp.clear();
+        }
+        catch(exception &ex)
+        {
+            cout << "Unable to load rotation matrix." << endl;
+
+            tensor<double,3> ff_cov_stationary;
+            cout << "Load covariance matrix of fluctuating forces from: " << out_path/"ff_cov_stationary.f64" << endl;
+            ff_cov_stationary.read(out_path/"ff_cov_stationary.f64");
+            size_t num_ts = (ff_cov_stationary.shape[0]+1)/2;
+            size_t num_obs = ff_cov_stationary.shape[1];
 
             if(!gaussian_init_val)
             {
-                for(size_t i=0; i<num_obs; i++)
+                tensor<double,4> ff_cov({num_ts,num_obs,num_ts,num_obs});
+                for(size_t t=0; t<num_ts; t++)
                 {
-                    simulated_trajectory(0,i) = trajectories(n%num_traj,0,i); // set initial value
+                    for(size_t s=0; s<num_ts; s++)
+                    {
+                        for(size_t i=0; i<num_obs; i++)
+                        {
+                            for(size_t j=0; j<num_obs; j++)
+                            {
+                                ff_cov(t,i,s,j) = ff_cov_stationary(num_ts-1+t-s,i,j);
+                            }
+                        }
+                    }
                 }
-                rand_ff_n = rand_ff_buffer;
+
+                rfg.init_cov(ff_average,ff_cov,out_path);
+                ff_cov.clear();
             }
             else
             {
-                for(size_t i=0; i<num_obs; i++)
-                {
-                    simulated_trajectory(0,i) = rand_ff_buffer(0,i); // set initial value
-                }
-                rand_ff_n << rand_ff_buffer(1);
-            }
+                tensor<double,3> ff_cov_extended;
+                cout << "Load covariance between initial values and fluctuating forces: " << out_path/"ff_cov_extended.f64" << endl;
+                ff_cov_extended.read(out_path/"ff_cov_extended.f64");
 
-            rk4.integrate(dt,drift,kernel,simulated_trajectory,rand_ff_n);
-
-            if(shift)
-            {
+                tensor<double,4> ff_cov({num_ts+1,num_obs,num_ts+1,num_obs});
                 for(size_t t=0; t<num_ts; t++)
                 {
-                    for(size_t o=0; o<num_obs; o++)
+                    for(size_t s=0; s<num_ts; s++)
                     {
-                        simulated_trajectory(t,o) += mean_initial_value[o];
+                        for(size_t i=0; i<num_obs; i++)
+                        {
+                            for(size_t j=0; j<num_obs; j++)
+                            {
+                                ff_cov(t+1,i,s+1,j) = ff_cov_stationary(num_ts-1+t-s,i,j);
+                            }
+                        }
                     }
                 }
+                for(size_t t=0; t<=num_ts; t++)
+                {
+                    for(size_t i=0; i<num_obs; i++)
+                    {
+                        for(size_t j=0;j<num_obs;j++)
+                        {
+                            ff_cov(0,j,t,i) = ff_cov(t,i,0,j) = ff_cov_extended(t,i,j);
+                        }
+                    }
+                }
+                ff_cov_extended.clear();
+
+                rfg.init_cov(ff_average,ff_cov,out_path);
+                ff_cov.clear();
             }
-            simulated_trajectory >> sim(n);
-            rand_ff_n >> rand_ff(n);
+            ff_average.clear();
         }
-    }
-    cout << "Write random fluctuating forces: "<< endl;
-    rand_ff.write("rand_ff.f64",out_path/"SIM");
-    cout << "Write simulated trajectories: " << (out_path/"SIM")/"traj.f64" << endl;
-    sim.write("traj.f64",out_path/"SIM");
-    cout << "Write times: " << (out_path/"SIM")/"times.f64" << endl;
-    times.write("times.f64",out_path/"SIM");
-    if(txt_out)
-    {
-        tensor<double,2> sim_traj({num_ts,num_obs});
-        for(size_t n=0;n<num_sim;n++)
+
+        cout << "Draw fluctuating forces and simulate trajectories." << endl;
+        tensor<double,3> sim = KernelMethods::simulateTrajectories(
+            trajectories,
+            drift,
+            kernel,
+            mean_initial_value,
+            rfg,
+            times[1]-times[0],
+            shift,
+            gaussian_init_val,
+            darboux_sum,
+            num_sim,
+            out_path);
+        cout << "Write simulated trajectories: " << (out_path/"SIM")/"traj.f64" << endl;
+        sim.write("traj.f64",out_path/"SIM");
+        cout << "Write times: " << (out_path/"SIM")/"times.f64" << endl;
+        times.write("times.f64",out_path/"SIM");
+        if(txt_out)
         {
-            sim_traj << sim(n);
-            InputOutput::write(times,sim_traj,(out_path/"SIM")/("sim_"+to_string(n)+".txt"));
+            tensor<double,2> sim_traj({sim.shape[1],sim.shape[2]});
+            for(size_t n=0;n<num_sim;n++)
+            {
+                sim_traj << sim(n);
+                InputOutput::write(times,sim_traj,(out_path/"SIM")/("sim_"+to_string(n)+".txt"));
+            }
         }
     }
+
     cout << "END: main_simulator" << endl << endl;
-
-
 	return 0;
 }

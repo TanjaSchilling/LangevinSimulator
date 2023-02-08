@@ -20,16 +20,6 @@ You should have received a copy of the GNU General Public License along with Lan
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-"""
-Format for binary input files:
-	- "traj.f64" 
-		Store your data in an numpy array with shape "(num_trajectories, num_time_steps, num_observables)",
-		then write input file using "writeBinary(np_array,"traj.f64")".
-	- "times.f64"
-		Store your time axis using "writeBinary(t_axis,"times.f64")", 
-		where "t_axis" is a numpy array of shape "(num_time_steps)".
-"""
-
 import struct
 import numpy as np
 
@@ -54,3 +44,34 @@ def writeBinary(data, filename):
     x = data.flatten()
     for i in range(data_size):
       file_handler.write(struct.pack('d', x[i]))
+      
+import matplotlib.pyplot as plt
+
+times = readBinary("times.f64")
+times_original = readBinary("../TEST_DATA_2/times.f64")
+
+data=readBinary("../TEST_DATA_2/traj.f64")
+plt.plot(times_original,data[0,:,0],color="black",label="original trajectory")
+data=readBinary("traj.f64")
+plt.plot(times,data[0,:,0],color="green",label="mollified trajectory")
+plt.legend()
+plt.savefig("trajectories.png")
+plt.show()
+
+data=readBinary("correlation_stationary.f64")
+plt.plot(data[:,0,0],color="green",label="correlation function of mollified trajectories")
+plt.legend()
+plt.savefig("corr.png")
+plt.show()
+
+
+data=readBinary("kernel_stationary.f64")
+plt.plot(data[:,0,0],color="green",label="memory kernel of mollified trajectories")
+plt.legend()
+plt.savefig("kernel.png")
+plt.show()
+
+
+
+
+

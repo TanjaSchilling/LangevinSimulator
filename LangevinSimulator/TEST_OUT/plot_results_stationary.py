@@ -20,16 +20,6 @@ You should have received a copy of the GNU General Public License along with Lan
 If not, see <https://www.gnu.org/licenses/>.
 """
 
-"""
-Format for binary input files:
-	- "traj.f64" 
-		Store your data in an numpy array with shape "(num_trajectories, num_time_steps, num_observables)",
-		then write input file using "writeBinary(np_array,"traj.f64")".
-	- "times.f64"
-		Store your time axis using "writeBinary(t_axis,"times.f64")", 
-		where "t_axis" is a numpy array of shape "(num_time_steps)".
-"""
-
 import struct
 import numpy as np
 
@@ -54,3 +44,63 @@ def writeBinary(data, filename):
     x = data.flatten()
     for i in range(data_size):
       file_handler.write(struct.pack('d', x[i]))
+      
+import matplotlib.pyplot as plt
+
+times = readBinary("times.f64")
+
+data=readBinary("traj.f64")
+plt.plot(times,data[0,:,0],label="first trajectory, first observable")
+plt.plot(times,data[0,:,1],label="first trajectory, second observable")
+plt.plot(times,data[1,:,0],label="second trajectory, first observable")
+plt.plot(times,data[1,:,1],label="second trajectory, second observable")
+plt.legend()
+plt.savefig("trajectories.png")
+plt.show()
+
+data=readBinary("correlation_stationary.f64")
+plt.plot(data[:,0,0],label="correlation function, observable 0x0")
+plt.legend()
+plt.savefig("corr00.png")
+plt.show()
+
+plt.plot(data[:,1,1],label="correlation function, observable 1x1")
+plt.legend()
+plt.savefig("corr11.png")
+plt.show()
+
+
+plt.plot(data[:,1,0],label="correlation function, observable 1x0")
+plt.legend()
+plt.savefig("corr10.png")
+plt.show()
+
+
+plt.plot(data[:,0,1],label="correlation function, observable 0x1")
+plt.legend()
+plt.savefig("corr01.png")
+plt.show()
+
+data=readBinary("kernel_stationary.f64")
+plt.plot(data[:,0,0],label="memory kernel, observable 0x0")
+plt.legend()
+plt.savefig("kernel00.png")
+plt.show()
+
+plt.plot(data[:,1,1],label="memory kernel, observable 1x1")
+plt.legend()
+plt.savefig("kernel11.png")
+plt.show()
+
+plt.plot(data[:,1,0],label="memory kernel, observable 1x0")
+plt.legend()
+plt.savefig("kernel10.png")
+plt.show()
+
+plt.plot(data[:,0,1],label="memory kernel, observable 0x1")
+plt.legend()
+plt.savefig("kernel01.png")
+plt.show()
+
+
+

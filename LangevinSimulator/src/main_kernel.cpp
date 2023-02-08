@@ -74,14 +74,6 @@ int main(int argc, char** argv) {
         cout << "Load times from: " << out_path/"times.f64" << endl;
         times.read(out_path/"times.f64");
 
-        size_t num_ts = correlation.shape[0];
-        size_t num_obs = correlation.shape[1];
-        size_t num_tot = num_ts * num_obs;
-        double dt = (times[1]-times[0]);
-
-        std::cout << "#\tnum_ts: " << num_ts << "\tnum_obs: " << num_obs << "\n";
-        std::cout << "#\tdt: " << dt << "\n";
-
         TensorUtils::tensor<double,3> drift;
         try
         {
@@ -91,7 +83,7 @@ int main(int argc, char** argv) {
         catch(exception &ex)
         {
             cout << "Unable to read binary. Calculate drift." << endl;
-            drift = KernelMethods::getDrift(correlation,dt);
+            drift = KernelMethods::getDrift(correlation,times[1]-times[0]);
             cout << "Write drift term: " << out_path/"drift.f64" << endl;
             drift.write("drift.f64",out_path);
             if(txt_out)
@@ -110,10 +102,13 @@ int main(int argc, char** argv) {
         catch(exception &ex)
         {
             cout << "Unable to read binary. Calculate memory kernel." << endl;
+            size_t num_ts = correlation.shape[0];
+            size_t num_obs = correlation.shape[0];
+            size_t num_tot = num_ts*num_obs;
             gsl_matrix* kernel = gsl_matrix_alloc(num_tot, num_tot);
             gsl_matrix* corr = gsl_matrix_alloc(num_tot, num_tot);
             correlation >> *corr->data;
-            KernelMethods::getMemoryKernel(kernel,corr,num_ts,num_obs,dt);
+            KernelMethods::getMemoryKernel(kernel,corr,num_ts,num_obs,times[1]-times[0]);
             gsl_matrix_free(corr);
             memory_kernel.alloc({num_ts,num_obs,num_ts,num_obs});
             memory_kernel << *kernel->data;
@@ -135,13 +130,7 @@ int main(int argc, char** argv) {
         TensorUtils::tensor<double,1> times;
         cout << "Load times from: " << out_path/"times.f64" << endl;
         times.read(out_path/"times.f64");
-
-        size_t num_ts = correlation.shape[0];
-        size_t num_obs = correlation.shape[1];
-        double dt = (times[1]-times[0]);
-
-        std::cout << "#\tnum_ts: " << num_ts << "\tnum_obs: " << num_obs << "\n";
-        std::cout << "#\tdt: " << dt << "\n";
+        double dt = times[1]-times[0];
 
         TensorUtils::tensor<double,2> drift;
         try
@@ -175,7 +164,6 @@ int main(int argc, char** argv) {
             cout << "Write memory kernel: " << out_path/"kernel_stationary.f64" << endl;
             if(txt_out)
             {
-                double dt = times[1]-times[0];
                 TensorUtils::tensor<double,1> new_times({2*times.size()-1});
                 for(size_t t=0;t<times.size();t++)
                 {

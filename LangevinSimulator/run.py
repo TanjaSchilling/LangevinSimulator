@@ -37,7 +37,7 @@ params.num_obs = 2;
 params.t_min = 20
 params.t_max = 60  	
 params.increment = 1
-params.shift = False 
+params.shift = True 
 params.fluctuating_force = True 
 params.num_sim = 20000
 params.txt_out = False
@@ -46,8 +46,9 @@ params.kernel_exe = "./bin/Release/main_kernel"
 params.ff_exe = "./bin/Release/main_fluctuating_forces"
 params.sim_exe = "./bin/Release/main_simulator"
 params.mollifier_width = 0
-params.gaussian_init_val = True
+params.gaussian_init_val = False
 params.darboux_sum = True
+params.stationary = False
 
 # RUN CPP EXECUTABLES
 run(params)

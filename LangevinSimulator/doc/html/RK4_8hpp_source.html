@@ -90,33 +90,59 @@ $(function() {
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;traj,</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;rand_ff);</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
-<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="classRK4.html#a40d2e17135b036ec74da27fc2f4064f6">   55</a></span>&#160;        TensorUtils::tensor&lt;double,1&gt; <a class="code" href="classRK4.html#a40d2e17135b036ec74da27fc2f4064f6">f</a>(</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            <span class="keywordtype">size_t</span> n,</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            <span class="keywordtype">double</span> dt,</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;            TensorUtils::tensor&lt;double,3&gt; &amp;drift,</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;            TensorUtils::tensor&lt;double,4&gt; &amp;kernel,</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;traj,</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;rand_ff);</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
-<div class="line"><a name="l00068"></a><span class="lineno"><a class="line" href="classRK4.html#a96dd8b686f5a4ff82bb9caf63ecf1f60">   68</a></span>&#160;        <span class="keywordtype">void</span> <a class="code" href="classRK4.html#a96dd8b686f5a4ff82bb9caf63ecf1f60">process</a>(</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;            <span class="keywordtype">size_t</span> n,</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;            <span class="keywordtype">double</span> dt,</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;            TensorUtils::tensor&lt;double,3&gt; &amp;drift,</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;            TensorUtils::tensor&lt;double,4&gt; &amp;kernel,</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;traj,</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;rand_ff);</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        TensorUtils::tensor&lt;double,1&gt; buffer;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        TensorUtils::tensor&lt;double,2&gt; buffer_2d;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;};</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// RK4_HPP</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="classRK4.html#afff8d87bdb6199621375b622910307d4">   55</a></span>&#160;        <span class="keywordtype">void</span> <a class="code" href="classRK4.html#afff8d87bdb6199621375b622910307d4">integrate</a>(</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;            <span class="keywordtype">double</span> dt,</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;drift,</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;            TensorUtils::tensor&lt;double,3&gt; &amp;kernel,</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;traj,</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;rand_ff);</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
+<div class="line"><a name="l00065"></a><span class="lineno"><a class="line" href="classRK4.html#a40d2e17135b036ec74da27fc2f4064f6">   65</a></span>&#160;        TensorUtils::tensor&lt;double,1&gt; <a class="code" href="classRK4.html#a40d2e17135b036ec74da27fc2f4064f6">f</a>(</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;            <span class="keywordtype">size_t</span> n,</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;            <span class="keywordtype">double</span> dt,</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;            TensorUtils::tensor&lt;double,3&gt; &amp;drift,</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;            TensorUtils::tensor&lt;double,4&gt; &amp;kernel,</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;traj,</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;rand_ff);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
+<div class="line"><a name="l00076"></a><span class="lineno"><a class="line" href="classRK4.html#a54163ecb3c5ebe06befb0133b3c311df">   76</a></span>&#160;        TensorUtils::tensor&lt;double,1&gt; <a class="code" href="classRK4.html#a54163ecb3c5ebe06befb0133b3c311df">f</a>(</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;            <span class="keywordtype">size_t</span> n,</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;            <span class="keywordtype">double</span> dt,</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;drift,</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;            TensorUtils::tensor&lt;double,3&gt; &amp;kernel,</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;traj,</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;rand_ff);</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
+<div class="line"><a name="l00089"></a><span class="lineno"><a class="line" href="classRK4.html#a96dd8b686f5a4ff82bb9caf63ecf1f60">   89</a></span>&#160;        <span class="keywordtype">void</span> <a class="code" href="classRK4.html#a96dd8b686f5a4ff82bb9caf63ecf1f60">process</a>(</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;            <span class="keywordtype">size_t</span> n,</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;            <span class="keywordtype">double</span> dt,</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;            TensorUtils::tensor&lt;double,3&gt; &amp;drift,</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;            TensorUtils::tensor&lt;double,4&gt; &amp;kernel,</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;traj,</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;rand_ff);</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
+<div class="line"><a name="l00100"></a><span class="lineno"><a class="line" href="classRK4.html#a29866adb9fab801ea808dbd9f5f76efe">  100</a></span>&#160;        <span class="keywordtype">void</span> <a class="code" href="classRK4.html#a29866adb9fab801ea808dbd9f5f76efe">process</a>(</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;            <span class="keywordtype">size_t</span> n,</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;            <span class="keywordtype">double</span> dt,</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;drift,</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;            TensorUtils::tensor&lt;double,3&gt; &amp;kernel,</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;traj,</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;            TensorUtils::tensor&lt;double,2&gt; &amp;rand_ff);</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        TensorUtils::tensor&lt;double,1&gt; buffer;</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        TensorUtils::tensor&lt;double,2&gt; buffer_2d;</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;};</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// RK4_HPP</span></div>
 <div class="ttc" id="aclassRK4_html"><div class="ttname"><a href="classRK4.html">RK4</a></div><div class="ttdoc">This class offers routines to integrate the nsGLE using the classical Runge-Kutta method (RK4).</div><div class="ttdef"><b>Definition:</b> RK4.hpp:34</div></div>
+<div class="ttc" id="aclassRK4_html_a29866adb9fab801ea808dbd9f5f76efe"><div class="ttname"><a href="classRK4.html#a29866adb9fab801ea808dbd9f5f76efe">RK4::process</a></div><div class="ttdeci">void process(size_t n, double dt, TensorUtils::tensor&lt; double, 2 &gt; &amp;drift, TensorUtils::tensor&lt; double, 3 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</div><div class="ttdoc">Overloaded function for the stationary case.</div></div>
 <div class="ttc" id="aclassRK4_html_a40d2e17135b036ec74da27fc2f4064f6"><div class="ttname"><a href="classRK4.html#a40d2e17135b036ec74da27fc2f4064f6">RK4::f</a></div><div class="ttdeci">TensorUtils::tensor&lt; double, 1 &gt; f(size_t n, double dt, TensorUtils::tensor&lt; double, 3 &gt; &amp;drift, TensorUtils::tensor&lt; double, 4 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</div><div class="ttdoc">Returns the time-derivative of the observable ‘A’(t)=:f(t,A(t)), wheret=n*dt`.</div></div>
+<div class="ttc" id="aclassRK4_html_a54163ecb3c5ebe06befb0133b3c311df"><div class="ttname"><a href="classRK4.html#a54163ecb3c5ebe06befb0133b3c311df">RK4::f</a></div><div class="ttdeci">TensorUtils::tensor&lt; double, 1 &gt; f(size_t n, double dt, TensorUtils::tensor&lt; double, 2 &gt; &amp;drift, TensorUtils::tensor&lt; double, 3 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</div><div class="ttdoc">Overloaded function for the stationary case.</div></div>
 <div class="ttc" id="aclassRK4_html_a96dd8b686f5a4ff82bb9caf63ecf1f60"><div class="ttname"><a href="classRK4.html#a96dd8b686f5a4ff82bb9caf63ecf1f60">RK4::process</a></div><div class="ttdeci">void process(size_t n, double dt, TensorUtils::tensor&lt; double, 3 &gt; &amp;drift, TensorUtils::tensor&lt; double, 4 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</div><div class="ttdoc">Executes a classcal Runge-Kutta step with step-size 2dt.</div></div>
 <div class="ttc" id="aclassRK4_html_ae850eb60d0ec531655b6888d8ef26d5d"><div class="ttname"><a href="classRK4.html#ae850eb60d0ec531655b6888d8ef26d5d">RK4::integrate</a></div><div class="ttdeci">void integrate(double dt, TensorUtils::tensor&lt; double, 3 &gt; &amp;drift, TensorUtils::tensor&lt; double, 4 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</div><div class="ttdoc">Integrates the equation of motions for a given realization of the fluctuating force rand_ff using the...</div></div>
+<div class="ttc" id="aclassRK4_html_afff8d87bdb6199621375b622910307d4"><div class="ttname"><a href="classRK4.html#afff8d87bdb6199621375b622910307d4">RK4::integrate</a></div><div class="ttdeci">void integrate(double dt, TensorUtils::tensor&lt; double, 2 &gt; &amp;drift, TensorUtils::tensor&lt; double, 3 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)</div><div class="ttdoc">Overloaded function for the stationary case.</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

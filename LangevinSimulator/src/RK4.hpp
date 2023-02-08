@@ -49,6 +49,16 @@ class RK4
             TensorUtils::tensor<double,2> &traj,
             TensorUtils::tensor<double,2> &rand_ff);
 
+        /*!
+            \brief Overloaded function for the stationary case.
+        */
+        void integrate(
+            double dt,
+            TensorUtils::tensor<double,2> &drift,
+            TensorUtils::tensor<double,3> &kernel,
+            TensorUtils::tensor<double,2> &traj,
+            TensorUtils::tensor<double,2> &rand_ff);
+
     protected:
 
         //! \brief Returns the time-derivative of the observable `A'(t)=:f(t,A(t))`, where `t=n*dt`.
@@ -57,6 +67,17 @@ class RK4
             double dt,
             TensorUtils::tensor<double,3> &drift,
             TensorUtils::tensor<double,4> &kernel,
+            TensorUtils::tensor<double,2> &traj,
+            TensorUtils::tensor<double,2> &rand_ff);
+
+        /*!
+            \brief Overloaded function for the stationary case.
+        */
+        TensorUtils::tensor<double,1> f(
+            size_t n,
+            double dt,
+            TensorUtils::tensor<double,2> &drift,
+            TensorUtils::tensor<double,3> &kernel,
             TensorUtils::tensor<double,2> &traj,
             TensorUtils::tensor<double,2> &rand_ff);
 
@@ -70,6 +91,17 @@ class RK4
             double dt,
             TensorUtils::tensor<double,3> &drift,
             TensorUtils::tensor<double,4> &kernel,
+            TensorUtils::tensor<double,2> &traj,
+            TensorUtils::tensor<double,2> &rand_ff);
+
+        /*!
+            \brief Overloaded function for the stationary case.
+        */
+        void process(
+            size_t n,
+            double dt,
+            TensorUtils::tensor<double,2> &drift,
+            TensorUtils::tensor<double,3> &kernel,
             TensorUtils::tensor<double,2> &traj,
             TensorUtils::tensor<double,2> &rand_ff);
 
