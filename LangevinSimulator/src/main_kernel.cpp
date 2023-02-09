@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
         {
             cout << "Unable to read binary. Calculate memory kernel." << endl;
             size_t num_ts = correlation.shape[0];
-            size_t num_obs = correlation.shape[0];
+            size_t num_obs = correlation.shape[1];
             size_t num_tot = num_ts*num_obs;
             gsl_matrix* kernel = gsl_matrix_alloc(num_tot, num_tot);
             gsl_matrix* corr = gsl_matrix_alloc(num_tot, num_tot);

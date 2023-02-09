@@ -1009,20 +1009,44 @@ tensor<double,3> KernelMethods::getDrift(tensor<double,4> &correlation, double d
 {
     size_t num_ts = correlation.shape[0];
     size_t num_obs = correlation.shape[1];
+
     tensor<double,3> diff_diag({num_ts,num_obs,num_obs});
-    tensor<double,3> diag_inverse(diff_diag.shape);
+    for(size_t k=0;k<num_obs;k++)
+    {
+        for(size_t l=0;l<num_obs;l++)
+        {
+            diff_diag(0,k,l)=(correlation(1,k,0,l)-correlation(0,k,0,l))/dt;
+        }
+    }
+    for(size_t t=1;t+1<num_ts;t++)
+    {
+        for(size_t k=0;k<num_obs;k++)
+        {
+            for(size_t l=0;l<num_obs;l++)
+            {
+                diff_diag(t,k,l)=(correlation(t+1,k,t,l)-correlation(t-1,k,t,l))/(2*dt);
+            }
+        }
+    }
+    for(size_t k=0;k<num_obs;k++)
+    {
+        for(size_t l=0;l<num_obs;l++)
+        {
+            diff_diag(num_ts-1,k,l)=(correlation(num_ts-1,k,num_ts-1,l)-correlation(num_ts-2,k,num_ts-1,l))/dt;
+        }
+    }
+
+    tensor<double,3> diag_inverse({num_ts,num_obs,num_obs});
     for(size_t t=0;t<num_ts;t++)
     {
         for(size_t k=0;k<num_obs;k++)
         {
             for(size_t l=0;l<num_obs;l++)
             {
-                diff_diag(t,k,l)=correlation(t,k,t,l);
+                diag_inverse(t,k,l)=correlation(t,k,t,l);
             }
         }
     }
-    diag_inverse=diff_diag;
-    diff_diag=diffFront(diff_diag,dt);
     diag_inverse=matInverse(diag_inverse);
 
     tensor<double,3> drift(diff_diag.shape);
