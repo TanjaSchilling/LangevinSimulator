@@ -77,18 +77,27 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aac5ed3e28ee18df6ebdc8f587e5ec091"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRandomForceGenerator.html#aac5ed3e28ee18df6ebdc8f587e5ec091">RandomForceGenerator</a> (TensorUtils::tensor&lt; double, 1 &gt; &amp;average, TensorUtils::tensor&lt; double, 2 &gt; &amp;cov, size_t num_obs)</td></tr>
-<tr class="memdesc:aac5ed3e28ee18df6ebdc8f587e5ec091"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor expects the mean and covariance matrix of the fluctuating forces.  <a href="classRandomForceGenerator.html#aac5ed3e28ee18df6ebdc8f587e5ec091">More...</a><br /></td></tr>
-<tr class="separator:aac5ed3e28ee18df6ebdc8f587e5ec091"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa265cc7edd46edafe0d1d730fc24bdd2"><td class="memItemLeft" align="right" valign="top"><a id="aa265cc7edd46edafe0d1d730fc24bdd2"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRandomForceGenerator.html#aa265cc7edd46edafe0d1d730fc24bdd2">RandomForceGenerator</a> ()</td></tr>
+<tr class="memdesc:aa265cc7edd46edafe0d1d730fc24bdd2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an uninitialized instantiation, but sets up the random number generator. <br /></td></tr>
+<tr class="separator:aa265cc7edd46edafe0d1d730fc24bdd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5859da1a1db38d05c4f692308f340dcc"><td class="memItemLeft" align="right" valign="top"><a id="a5859da1a1db38d05c4f692308f340dcc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRandomForceGenerator.html#a5859da1a1db38d05c4f692308f340dcc">init_cov</a> (TensorUtils::tensor&lt; double, 2 &gt; &amp;ff_average, TensorUtils::tensor&lt; double, 4 &gt; &amp;ff_cov, std::filesystem::path out_path)</td></tr>
+<tr class="memdesc:a5859da1a1db38d05c4f692308f340dcc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes and writes the rotation matrix for a given covariance matrix. On exit, the <a class="el" href="classRandomForceGenerator.html" title="This class offers routines to generate multivariate normal distributed fluctuating forces.">RandomForceGenerator</a> is initialized. <br /></td></tr>
+<tr class="separator:a5859da1a1db38d05c4f692308f340dcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77b5486ae74c6688f3c050a039e33da3"><td class="memItemLeft" align="right" valign="top"><a id="a77b5486ae74c6688f3c050a039e33da3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRandomForceGenerator.html#a77b5486ae74c6688f3c050a039e33da3">init_decomp</a> (TensorUtils::tensor&lt; double, 2 &gt; &amp;ff_average, TensorUtils::tensor&lt; double, 4 &gt; &amp;ff_decomp)</td></tr>
+<tr class="memdesc:a77b5486ae74c6688f3c050a039e33da3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the <a class="el" href="classRandomForceGenerator.html" title="This class offers routines to generate multivariate normal distributed fluctuating forces.">RandomForceGenerator</a> with a previously computed rotation matrix. <br /></td></tr>
+<tr class="separator:a77b5486ae74c6688f3c050a039e33da3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a5fbe83babecdbb36facb4a09a88a19"><td class="memItemLeft" align="right" valign="top">TensorUtils::tensor&lt; double, 2 &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRandomForceGenerator.html#a8a5fbe83babecdbb36facb4a09a88a19">pull_multivariate_gaussian</a> ()</td></tr>
 <tr class="memdesc:a8a5fbe83babecdbb36facb4a09a88a19"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draw multivariate normal distributed fluctuating forces.  <a href="classRandomForceGenerator.html#a8a5fbe83babecdbb36facb4a09a88a19">More...</a><br /></td></tr>
 <tr class="separator:a8a5fbe83babecdbb36facb4a09a88a19"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:a8142dfa283e396d4538adf547cdd95af"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRandomForceGenerator.html#a8142dfa283e396d4538adf547cdd95af">set_decomp</a> (TensorUtils::tensor&lt; double, 2 &gt; &amp;source, gsl_matrix *dest)</td></tr>
-<tr class="memdesc:a8142dfa283e396d4538adf547cdd95af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes <code>M=UD^{1/2}</code>, where <code>C=UDU^{-1}</code> is the spectral decomposition of the covariance matrix of the fluctuating forces.  <a href="classRandomForceGenerator.html#a8142dfa283e396d4538adf547cdd95af">More...</a><br /></td></tr>
-<tr class="separator:a8142dfa283e396d4538adf547cdd95af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe2bf5f2bd07f9ef8b4c9ece272e1274"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classRandomForceGenerator.html#abe2bf5f2bd07f9ef8b4c9ece272e1274">set_decomp</a> (TensorUtils::tensor&lt; double, 4 &gt; &amp;source, gsl_matrix *dest)</td></tr>
+<tr class="memdesc:abe2bf5f2bd07f9ef8b4c9ece272e1274"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes <code>M=UD^{1/2}</code>, where <code>C=UDU^{-1}</code> is the spectral decomposition of the covariance matrix of the fluctuating forces.  <a href="classRandomForceGenerator.html#abe2bf5f2bd07f9ef8b4c9ece272e1274">More...</a><br /></td></tr>
+<tr class="separator:abe2bf5f2bd07f9ef8b4c9ece272e1274"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This class offers routines to generate multivariate normal distributed fluctuating forces. </p>
@@ -99,53 +108,7 @@ Protected Member Functions</h2></td></tr>
 <p>LangevinSimulator is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.</p>
 <p>LangevinSimulator is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.</p>
 <p>You should have received a copy of the GNU General Public License along with LangevinSimulator. If not, see <a href="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</a>. </p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="aac5ed3e28ee18df6ebdc8f587e5ec091"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aac5ed3e28ee18df6ebdc8f587e5ec091">&#9670;&nbsp;</a></span>RandomForceGenerator()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">RandomForceGenerator::RandomForceGenerator </td>
-          <td>(</td>
-          <td class="paramtype">TensorUtils::tensor&lt; double, 1 &gt; &amp;&#160;</td>
-          <td class="paramname"><em>average</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">TensorUtils::tensor&lt; double, 2 &gt; &amp;&#160;</td>
-          <td class="paramname"><em>cov</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>num_obs</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Constructor expects the mean and covariance matrix of the fluctuating forces. </p>
-<p>After the <a class="el" href="classRandomForceGenerator.html" title="This class offers routines to generate multivariate normal distributed fluctuating forces.">RandomForceGenerator</a> has been constructed, the fluctuating forces can be drawn by calling <a class="el" href="classRandomForceGenerator.html#a8a5fbe83babecdbb36facb4a09a88a19">pull_multivariate_gaussian()</a>.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">average</td><td>Mean value of the fluctuating forces as a one-dimensional tensor: <code>average[num_obs*t+o]=&lt;ff(t,o)&gt;</code>. </td></tr>
-    <tr><td class="paramname">cov</td><td>Covariance matrix of the fluctuating forces <code>cov(num_obs*t1+o1,num_obs*t2+o2)=&lt;ff(t1,o1)*ff(t2,o2)&gt;-&lt;ff(t1,o1)&gt;*&lt;ff(t2,o2)&gt;</code>. </td></tr>
-    <tr><td class="paramname">num_obs</td><td>Number of observables. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
+</div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a8a5fbe83babecdbb36facb4a09a88a19"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8a5fbe83babecdbb36facb4a09a88a19">&#9670;&nbsp;</a></span>pull_multivariate_gaussian()</h2>
 
@@ -162,12 +125,12 @@ Protected Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Draw multivariate normal distributed fluctuating forces. </p>
-<dl class="section return"><dt>Returns</dt><dd>Returns the fluctuating forces <code>rand_ff = Mz</code>. The matrix <code>M</code> is given by <code>M=UD^{1/2}</code>, where <code>C=UDU^{-1}</code> is the spectral decomposition of the covariance matrix and <code>z</code> contains independent, standard normal distributed numbers. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>Returns the fluctuating forces <code>rand_ff = Mz</code>. The rotation matrix <code>M</code> is given by <code>M=UD^{1/2}</code>, where <code>C=UDU^{-1}</code> is the spectral decomposition of the covariance matrix and <code>z</code> contains independent, standard normal distributed random numbers. </dd></dl>
 
 </div>
 </div>
-<a id="a8142dfa283e396d4538adf547cdd95af"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8142dfa283e396d4538adf547cdd95af">&#9670;&nbsp;</a></span>set_decomp()</h2>
+<a id="abe2bf5f2bd07f9ef8b4c9ece272e1274"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe2bf5f2bd07f9ef8b4c9ece272e1274">&#9670;&nbsp;</a></span>set_decomp()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -178,7 +141,7 @@ Protected Member Functions</h2></td></tr>
         <tr>
           <td class="memname">void RandomForceGenerator::set_decomp </td>
           <td>(</td>
-          <td class="paramtype">TensorUtils::tensor&lt; double, 2 &gt; &amp;&#160;</td>
+          <td class="paramtype">TensorUtils::tensor&lt; double, 4 &gt; &amp;&#160;</td>
           <td class="paramname"><em>source</em>, </td>
         </tr>
         <tr>

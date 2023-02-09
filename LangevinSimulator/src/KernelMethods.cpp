@@ -22,6 +22,8 @@ If not, see <https://www.gnu.org/licenses/>.
 
 #include "KernelMethods.hpp"
 #include "InputOutput.hpp"
+#include "FourierTransforms.hpp"
+#include "RK4.hpp"
 
 #include <cstring>
 #include <iostream>
@@ -35,7 +37,240 @@ If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 using namespace TensorUtils;
 
-tensor<double,4> KernelMethods::calcLowerBlockTriangularInverse(TensorUtils::tensor<double,4> &src)
+tensor<double,1> KernelMethods::shiftTrajectories(tensor<double,3> &traj)
+{
+    tensor<double,1> mean_initial_value({traj.shape[2]},0.0);
+    for(size_t n=0; n<traj.shape[0]; n++)
+    {
+        for(size_t o=0; o<traj.shape[2]; o++)
+        {
+            mean_initial_value[o] += traj(n,0,o);
+        }
+    }
+    mean_initial_value *= 1.0/traj.shape[0];
+    for(size_t n=0; n<traj.shape[0]; n++)
+    {
+        for(size_t t=0; t<traj.shape[1]; t++)
+        {
+            for(size_t o=0; o<traj.shape[2]; o++)
+            {
+                traj(n,t,o) -= mean_initial_value[o];
+            }
+        }
+    }
+    return mean_initial_value;
+}
+
+void KernelMethods::mollifyTrajectories(tensor<double,1> &times, tensor<double,3> &traj, size_t mollifier_width)
+{
+    size_t num_traj = traj.shape[0];
+    size_t num_ts = traj.shape[1];
+    size_t num_obs = traj.shape[2];
+    size_t num_pad = num_ts + 2*mollifier_width+1 -1;
+    while(num_pad&(num_pad-1)) // num_pad is not a power of 2!
+    {
+        num_pad++;
+    }
+    tensor<double> traj_pad({num_traj,num_obs,num_pad},0.0);
+    for(size_t n=0; n<num_traj; n++)
+    {
+        for(size_t o=0;o<num_obs;o++)
+        {
+            for(size_t t=0;t<num_ts;t++)
+            {
+                traj_pad(n,o,t) = traj(n,t,o);
+            }
+        }
+    }
+    traj.clear();
+    tensor<double> mollifier({num_pad},0.0);
+    double sum = 0.0;
+    for(size_t t=1; t<2*mollifier_width; t++)
+    {
+        mollifier[t] = exp( 1/(pow(double(t)/mollifier_width-1,2)-1) );
+        sum += mollifier[t];
+    }
+    mollifier *= 2.0/(num_pad*sum);
+    double * lookup_table = new double[num_pad];
+    FFTBW::FourierTransforms<double>::initLookUp(lookup_table,num_pad);
+    FFTBW::FourierTransforms<double>::fftReal(&mollifier[0],num_pad,+1,lookup_table,false);
+    for(size_t n=0; n<num_traj; n++)
+    {
+        for(size_t o=0;o<num_obs;o++)
+        {
+            FFTBW::FourierTransforms<double>::convolve(&traj_pad(n,o),&mollifier[0],num_pad,lookup_table,false);
+        }
+    }
+    delete[] lookup_table;
+    traj.alloc({num_traj,num_ts-2*mollifier_width,num_obs});
+    for(size_t n=0; n<num_traj; n++)
+    {
+        for(size_t t=0;t<num_ts-2*mollifier_width;t++)
+        {
+            for(size_t o=0;o<num_obs;o++)
+            {
+                traj(n,t,o) = traj_pad(n,o,t+2*mollifier_width);
+            }
+        }
+    }
+    traj_pad.clear();
+    tensor<double> new_times({num_ts-2*mollifier_width});
+    new_times << times[mollifier_width];
+    times = new_times;
+    new_times.clear();
+}
+
+tensor<double,4> KernelMethods::getCorrelationFunction(tensor<double,3> &traj, bool unbiased)
+{
+    size_t num_traj = traj.shape[0];
+    size_t num_ts = traj.shape[1];
+    size_t num_obs = traj.shape[2];
+    gsl_matrix * in_buffer = gsl_matrix_alloc(num_traj,num_ts*num_obs);
+    if(unbiased)
+    {
+         traj *= 1.0/sqrt(num_traj-1);
+    }
+    else
+    {
+        traj *= 1.0/sqrt(num_traj);
+    }
+    traj >> *in_buffer->data;
+    gsl_matrix * out_buffer = gsl_matrix_alloc(num_ts*num_obs,num_ts*num_obs);
+    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, in_buffer, in_buffer, 0.0, out_buffer);
+    gsl_matrix_free(in_buffer);
+    tensor<double,4> correlation({num_ts,num_obs,num_ts,num_obs});
+    correlation << *out_buffer->data;
+    gsl_matrix_free(out_buffer);
+    return correlation;
+}
+
+tensor<double,3> KernelMethods::getStationaryCorrelation(tensor<double,3> &traj, bool unbiased)
+{
+    size_t num_traj = traj.shape[0];
+    size_t num_ts = traj.shape[1];
+    size_t num_obs = traj.shape[2];
+    size_t num_pad = 2*num_ts-1;
+    while(num_pad&(num_pad-1)) // num_pad is not a power of 2!
+    {
+        num_pad++;
+    }
+    tensor<double> traj_pad({num_traj,num_obs,num_pad},0.0);
+    for(size_t n=0; n<num_traj; n++)
+    {
+        for(size_t o=0;o<num_obs;o++)
+        {
+            for(size_t t=0;t<num_ts;t++)
+            {
+                traj_pad(n,o,t) = traj(n,t,o);
+            }
+        }
+    }
+    double * lookup_table = new double[num_pad];
+    FFTBW::FourierTransforms<double>::initLookUp(lookup_table,num_pad);
+    for(size_t n=0; n<num_traj; n++)
+    {
+        for(size_t o=0;o<num_obs;o++)
+        {
+            FFTBW::FourierTransforms<double>::fftReal(&traj_pad(n,o),num_pad,+1,lookup_table,false);
+        }
+    }
+    tensor<double,3> correlation({num_obs,num_obs,num_pad},0.0);
+    for(size_t n=0;n<num_traj;n++)
+    {
+        for(size_t o1=0;o1<num_obs;o1++)
+        {
+            for(size_t o2=0;o2<num_obs;o2++)
+            {
+                correlation(o1,o2,0) += traj_pad(n,o1,0)*traj_pad(n,o2,0);
+                correlation(o1,o2,1) += traj_pad(n,o1,1)*traj_pad(n,o2,1);
+                for(size_t k=2;k<num_pad;k+=2)
+                {
+                    correlation(o1,o2,k) += traj_pad(n,o1,k)*traj_pad(n,o2,k)+traj_pad(n,o1,k+1)*traj_pad(n,o2,k+1);
+                    correlation(o1,o2,k+1) +=  -1*traj_pad(n,o1,k)*traj_pad(n,o2,k+1)+traj_pad(n,o1,k+1)*traj_pad(n,o2,k);
+                }
+            }
+        }
+    }
+    traj_pad.clear();
+    for(size_t o1=0;o1<num_obs;o1++)
+    {
+        for(size_t o2=0;o2<num_obs;o2++)
+        {
+            FFTBW::FourierTransforms<double>::fftReal(&correlation(o1,o2),num_pad,-1,lookup_table,false);
+        }
+    }
+    delete[] lookup_table;
+    tensor<double,3> corr_out({2*num_ts-1,num_obs,num_obs});
+    double dummy;
+    if(unbiased)
+    {
+        dummy = 1.0/(num_traj*num_ts-1);
+    }
+    else
+    {
+        dummy = 1.0/(num_traj*num_ts);
+    }
+    for(size_t k=0;k<num_obs;k++)
+    {
+        for(size_t l=0;l<num_obs;l++)
+        {
+            corr_out(num_ts-1,k,l) = correlation(k,l,0)*dummy;
+        }
+    }
+    for(size_t tau=1;tau<num_ts;tau++)
+    {
+        if(unbiased)
+        {
+            dummy = 1.0/(num_traj*(num_ts-tau)-1);
+        }
+        else
+        {
+            dummy = 1.0/(num_traj*(num_ts-tau));
+        }
+        for(size_t k=0;k<num_obs;k++)
+        {
+            for(size_t l=0;l<num_obs;l++)
+            {
+                corr_out(num_ts-1+tau,k,l) = correlation(k,l,tau)*dummy;
+                corr_out(num_ts-1-tau,k,l) = correlation(k,l,num_pad-tau)*dummy;
+            }
+        }
+    }
+    corr_out *= 2.0/num_pad;
+    return corr_out;
+}
+
+tensor<double,2> KernelMethods::subAverage(tensor<double,3> &traj)
+{
+    size_t num_traj = traj.shape[0];
+    size_t num_ts = traj.shape[1];
+    size_t num_obs =  traj.shape[2];
+    tensor<double,2> average({num_ts,num_obs},0.0);
+    for(size_t n=0; n<num_traj;n++)
+    {
+        for(size_t t=0; t<num_ts; t++)
+        {
+            for(size_t i=0;i<num_obs;i++)
+            {
+                average(t,i) += traj(n,t,i);
+            }
+        }
+    }
+    average *= 1.0/num_traj;
+    for(size_t n=0; n<num_traj;n++)
+    {
+        for(size_t t=0; t<num_ts; t++)
+        {
+            for(size_t i=0;i<num_obs;i++)
+            {
+                traj(n,t,i) -= average(t,i);
+            }
+        }
+    }
+    return average;
+}
+
+tensor<double,4> KernelMethods::calcLowerBlockTriangularInverse(tensor<double,4> &src)
 {
     size_t num_ts = src.shape[0];
     size_t num_obs = src.shape[1];
@@ -616,6 +851,13 @@ tensor<double,3> KernelMethods::diffTrajectories(tensor<double,3> &trajectories,
                 }
             }
         }
+        for(size_t i=0; i<num_traj; i++)
+        {
+            for(size_t k=0; k<num_obs; k++)
+            {
+                diff(i,num_ts-1,k) = (trajectories(i,num_ts-1,k)-trajectories(i,num_ts-2,k))*dummy;
+            }
+        }
     }
     else
     {
@@ -718,7 +960,6 @@ tensor<double,2> KernelMethods::getDrift(tensor<double,3> &correlation, double d
 {
     size_t num_obs = correlation.shape[1];
     size_t num_ts = (correlation.shape[0]+1)/2;
-    cout << num_ts << endl;
 
     // diff
     tensor<double,2> diff({num_obs,num_obs});
@@ -727,7 +968,6 @@ tensor<double,2> KernelMethods::getDrift(tensor<double,3> &correlation, double d
         for(size_t l=0;l<num_obs;l++)
         {
             diff(k,l)=(correlation(num_ts,k,l)-correlation(num_ts-2,k,l))/(2*dt);
-            cout << diff(k,l) << endl;
         }
     }
 
@@ -769,20 +1009,44 @@ tensor<double,3> KernelMethods::getDrift(tensor<double,4> &correlation, double d
 {
     size_t num_ts = correlation.shape[0];
     size_t num_obs = correlation.shape[1];
+
     tensor<double,3> diff_diag({num_ts,num_obs,num_obs});
-    tensor<double,3> diag_inverse(diff_diag.shape);
+    for(size_t k=0;k<num_obs;k++)
+    {
+        for(size_t l=0;l<num_obs;l++)
+        {
+            diff_diag(0,k,l)=(correlation(1,k,0,l)-correlation(0,k,0,l))/dt;
+        }
+    }
+    for(size_t t=1;t+1<num_ts;t++)
+    {
+        for(size_t k=0;k<num_obs;k++)
+        {
+            for(size_t l=0;l<num_obs;l++)
+            {
+                diff_diag(t,k,l)=(correlation(t+1,k,t,l)-correlation(t-1,k,t,l))/(2*dt);
+            }
+        }
+    }
+    for(size_t k=0;k<num_obs;k++)
+    {
+        for(size_t l=0;l<num_obs;l++)
+        {
+            diff_diag(num_ts-1,k,l)=(correlation(num_ts-1,k,num_ts-1,l)-correlation(num_ts-2,k,num_ts-1,l))/dt;
+        }
+    }
+
+    tensor<double,3> diag_inverse({num_ts,num_obs,num_obs});
     for(size_t t=0;t<num_ts;t++)
     {
         for(size_t k=0;k<num_obs;k++)
         {
             for(size_t l=0;l<num_obs;l++)
             {
-                diff_diag(t,k,l)=correlation(t,k,t,l);
+                diag_inverse(t,k,l)=correlation(t,k,t,l);
             }
         }
     }
-    diag_inverse=diff_diag;
-    diff_diag=diffFront(diff_diag,dt);
     diag_inverse=matInverse(diag_inverse);
 
     tensor<double,3> drift(diff_diag.shape);
@@ -907,88 +1171,537 @@ tensor<double,3> KernelMethods::getFluctuatingForce(
     return diff_traj;
 }
 
-void KernelMethods::writeCovarianceMatrix(tensor<double,3> &ff, string out_folder)
+tensor<double,3> KernelMethods::getFluctuatingForce(
+    tensor<double,3> &kernel,
+    tensor<double,2> &drift,
+    tensor<double,3> &trajectories,
+    tensor<double,1> &times,
+    bool darboux_sum)
 {
-    size_t num_traj = ff.shape[0];
-    size_t num_ts = ff.shape[1];
-    size_t num_obs = ff.shape[2];
+    double dt = times[1]-times[0];
+    size_t num_traj = trajectories.shape[0];
+    size_t num_ts = trajectories.shape[1];
+    size_t num_obs = trajectories.shape[2];
 
-    tensor<double> ff_average;
-    ff_average = ff.contract({-1,2,3});
-    ff_average *= 1.0/num_traj;
-    cout << "Write mean values of fluctuating forces: " << out_folder+"/"+"ff_average.f64" << endl;
-    ff_average.write("ff_average.f64",out_folder);
+    // get dA/dt
+    tensor<double,3> diff_traj = diffTrajectories(trajectories, dt, darboux_sum);
 
-    tensor<double> ff_cov;
-    ff_cov = ff;
+    // subtract drift * A
+    double dummy;
     for(size_t n=0; n<num_traj; n++)
     {
-        ff_cov.substract(ff_average, {n});
-    }
-
-    gsl_matrix * in_buffer = gsl_matrix_alloc(num_traj,num_ts*num_obs);
-    ff_cov *= sqrt(1.0/(num_traj-1));
-    ff_cov >> *in_buffer->data;
-    ff_cov.clear();
-
-    gsl_matrix * out_buffer = gsl_matrix_alloc(num_ts*num_obs,num_ts*num_obs);
-
-    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, in_buffer, in_buffer, 0.0, out_buffer);
-    gsl_matrix_free(in_buffer);
-
-    ff_cov.alloc({num_ts,num_obs,num_ts,num_obs});
-    ff_cov << *out_buffer->data;
-    gsl_matrix_free(out_buffer);
-    cout << "Write covariance matrix of fluctuating forces: " << out_folder+"/"+"ff_cov.f64" << endl;
-    ff_cov.write("ff_cov.f64", out_folder);
-}
-
-void KernelMethods::writeExtendedCovarianceMatrix(TensorUtils::tensor<double,3> &traj, TensorUtils::tensor<double,3> &ff, std::string out_folder)
-{
-    size_t num_traj = ff.shape[0];
-    size_t num_ts = ff.shape[1];
-    size_t num_obs = ff.shape[2];
-
-    num_ts++;
-
-    tensor<double> ff_cov({num_traj,num_ts,num_obs});
-    for(size_t n=0; n<num_traj; n++)
-    {
-        for(size_t o=0; o<num_obs; o++)
+        for(size_t t=0; t<num_ts; t++)
         {
-            ff_cov(n,0,o) = traj(n,0,o);
-            for(size_t t=1; t<num_ts; t++)
+            for(size_t i=0; i <num_obs; i++)
             {
-                ff_cov(n,t,o) = ff(n,t-1,o);
+                dummy = 0.0;
+                for(size_t k=0; k<num_obs; k++)
+                {
+                    dummy += drift(i,k)*trajectories(n,t,k);  // = dA/dt - drift*A
+                }
+                diff_traj(n,t,i) -= dummy;
             }
         }
     }
+    drift.clear();
 
-    tensor<double> ff_average;
-    ff_average = ff_cov.contract({-1,2,3});
-    ff_average *= 1.0/num_traj;
-    cout << "Write mean of initial values and fluctuating forces: " << out_folder+"/"+"ff_average.f64" << endl;
-    ff_average.write("ff_average.f64",out_folder);
-
-    for(size_t n=0; n<num_traj; n++)
+    // subtract memory part
+    tensor<double,3> buffer;
+    if(darboux_sum)
     {
-        ff_cov.substract(ff_average, {n});
+        tensor<double,3> kernel_buffer(kernel.shape);
+        for(size_t t=0; t<kernel.shape[0]; t++)
+        {
+            for(size_t i=0;i<kernel.shape[1];i++)
+            {
+                for(size_t j=0;j<kernel.shape[2];j++)
+                {
+                    kernel_buffer(kernel.shape[0]-1-t,i,j) = kernel(t,i,j);
+                }
+            }
+        }
+        kernel = kernel_buffer;
+        kernel_buffer.clear();
+        trajectories=trajectories.transpose({1,2,0});
+        kernel=kernel.transpose({0,2,1});
+        buffer.alloc({num_ts,num_obs,num_traj},0.0);
+        gsl_matrix * out = gsl_matrix_alloc(num_obs,num_traj);
+        for(size_t t=1;t<num_ts;t++)
+        {
+            gsl_matrix_const_view kernel_t = gsl_matrix_const_view_array(&kernel( (kernel.shape[0]+1)/2-1 -t ),t*num_obs,num_obs);
+            gsl_matrix_const_view traj = gsl_matrix_const_view_array(&trajectories[0],t*num_obs,num_traj);
+            gsl_blas_dgemm(CblasTrans,CblasNoTrans,1.0,&kernel_t.matrix,&traj.matrix,0.0,out);
+            memcpy(&buffer(t),out->data,num_obs*num_traj*sizeof(double));
+        }
+        gsl_matrix_free(out);
+        buffer=buffer.transpose({2,0,1});
+        buffer *=dt;
+        trajectories = trajectories.transpose({2,0,1});
+        diff_traj -= buffer; // = dA/dt-drift*A-SUM_t2 K(.,t2)*A(t2)
+    }
+    else
+    {
+        buffer.alloc({num_traj,num_ts,num_obs});
+        const size_t k_incr_0 = kernel.incr[0];
+        const size_t k_incr_1 = kernel.incr[1];
+        const size_t traj_incr_0 = trajectories.incr[0];
+        const size_t traj_incr_1 = trajectories.incr[1];
+        const size_t t_not = (kernel.shape[0]+1)/2-1;
+        for(size_t n=0; n<num_traj; n++)
+        {
+            for(size_t t1=0; t1<num_ts; t1++)
+            {
+                for(size_t i=0; i<num_obs;i++)
+                {
+                    dummy = 0.0;
+                    size_t t2=0;
+                    while(t2+1<t1)
+                    {
+                        for(size_t k=0; k<num_obs; k++)
+                        {
+                            dummy += kernel[k_incr_0*(t_not+t1-t2)+k_incr_1*i+k]*trajectories[traj_incr_0*n+traj_incr_1*t2+k];
+                            dummy += 4.0*kernel[k_incr_0*(t_not+t1-t2-1)+k_incr_1*i+k]*trajectories[traj_incr_0*n+traj_incr_1*(t2+1)+k];
+                            dummy += kernel[k_incr_0*(t_not+t1-t2-2)+k_incr_1*i+k]*trajectories[traj_incr_0*n+traj_incr_1*(t2+2)+k];
+                        }
+                        t2+=2;
+                    }
+                    if(t2+1 == t1) // Trapezoidal rule for last time-interval
+                    {
+                        for(size_t k=0; k<num_obs; k++)
+                        {
+                            dummy += 1.5*kernel[k_incr_0*(t_not+t1-t2)+k_incr_1*i+k]*trajectories[traj_incr_0*n+traj_incr_1*t2+k];
+                            dummy += 1.5*kernel[k_incr_0*(t_not+t1-t2-1)+k_incr_1*i+k]*trajectories[traj_incr_0*n+traj_incr_1*(t2+1)+k];
+                        }
+                    }
+                    buffer(n,t1,i) = dummy;
+                }
+            }
+        }
+        buffer *= dt/3.0;
+        diff_traj -= buffer; // = dA/dt-drift*A-SUM_t2 K(.,t2)*A(t2)
+    }
+    return diff_traj;
+}
+
+void KernelMethods::writeCovarianceMatrix(tensor<double,3> &ff, filesystem::path out_path, bool stationary)
+{
+    tensor<double,2> ff_average = subAverage(ff);
+    cout << "Write mean values of fluctuating forces: " << out_path/"ff_average.f64" << endl;
+    ff_average.write("ff_average.f64",out_path);
+    if(!stationary)
+    {
+        tensor<double,4> ff_cov = getCorrelationFunction(ff,true);
+        cout << "Write covariance matrix of fluctuating forces: " << out_path/"ff_cov.f64" << endl;
+        ff_cov.write("ff_cov.f64", out_path);
+    }
+    else
+    {
+        tensor<double,3> ff_cov = getStationaryCorrelation(ff,true);
+        cout << "Write covariance matrix of fluctuating forces: " << out_path/"ff_cov_stationary.f64" << endl;
+        ff_cov.write("ff_cov_stationary.f64", out_path);
+    }
+}
+
+void KernelMethods::writeExtendedCovarianceMatrix(tensor<double,3> &traj, tensor<double,3> &ff, filesystem::path out_path, bool stationary)
+{
+    if(!stationary)
+    {
+        size_t num_traj = ff.shape[0];
+        size_t num_ts = ff.shape[1];
+        size_t num_obs = ff.shape[2];
+        tensor<double,3> ff_buffer({num_traj,num_ts+1,num_obs});
+        for(size_t n=0; n<num_traj; n++)
+        {
+            for(size_t t=0; t<num_ts; t++)
+            {
+                for(size_t o=0; o<num_obs; o++)
+                {
+                    ff_buffer(n,t+1,o) = ff(n,t,o);
+                }
+            }
+        }
+        for(size_t n=0; n<num_traj; n++)
+        {
+            for(size_t o=0; o<num_obs; o++)
+            {
+                ff_buffer(n,0,o) = traj(n,0,o);
+            }
+        }
+        tensor<double,2> ff_average = subAverage(ff_buffer);
+        cout << "Write mean of initial values and fluctuating forces: " << out_path/"ff_average.f64" << endl;
+        ff_average.write("ff_average.f64",out_path);
+        tensor<double,4> ff_cov = getCorrelationFunction(ff_buffer,true);
+        cout << "Write covariance matrix of initial values and fluctuating forces: " << out_path/"ff_cov.f64" << endl;
+        ff_cov.write("ff_cov.f64", out_path);
+    }
+    else
+    {
+        size_t num_traj = ff.shape[0];
+        size_t num_ts = ff.shape[1];
+        size_t num_obs = ff.shape[2];
+
+        tensor<double,2> ff_average = subAverage(ff);
+        TensorUtils::tensor<double,1> mean_initial_value = KernelMethods::shiftTrajectories(traj);
+        tensor<double,2> ff_average_extended({num_ts+1,num_obs});
+        for(size_t t=0; t<num_ts; t++)
+        {
+            for(size_t i=0;i<num_obs;i++)
+            {
+                ff_average_extended(t+1,i) = ff_average(t,i);
+            }
+        }
+        for(size_t i=0;i<num_obs;i++)
+        {
+            ff_average_extended(0,i) = mean_initial_value[i];
+        }
+        cout << "Write mean of initial values and fluctuating forces: " << out_path/"ff_average.f64" << endl;
+        ff_average_extended.write("ff_average.f64",out_path);
+        ff_average.clear();
+        ff_average_extended.clear();
+
+        tensor<double,3> ff_cov = getStationaryCorrelation(ff,true);
+        cout << "Write covariance matrix of fluctuating forces: " << out_path/"ff_cov_stationary.f64" << endl;
+        ff_cov.write("ff_cov_stationary.f64", out_path);
+
+        tensor<double,2> variance({num_obs,num_obs},0.0);
+        for(size_t n=0;n<num_traj;n++)
+        {
+            for(size_t i=0;i<num_obs;i++)
+            {
+                for(size_t j=0;j<num_obs;j++)
+                {
+                    variance(i,j) += traj(n,0,i)*traj(n,0,j);
+                }
+            }
+        }
+        variance *= 1.0/(num_traj-1);
+
+        tensor<double,3> ff_cov_extended({num_ts+1,num_obs,num_obs},0.0);
+        for(size_t n=0;n<num_traj; n++)
+        {
+            for(size_t t=0;t<num_ts;t++)
+            {
+                for(size_t i=0;i<num_obs;i++)
+                {
+                    for(size_t j=0;j<num_obs;j++)
+                    {
+                        ff_cov_extended(t+1,i,j) += traj(n,0,i)*ff(n,t,j);
+                    }
+                }
+            }
+        }
+        ff_cov_extended *= 1.0/(num_traj-1);
+        for(size_t i=0;i<num_obs;i++)
+        {
+            for(size_t j=0;j<num_obs;j++)
+            {
+                ff_cov_extended(0,i,j) += variance(i,j);
+            }
+        }
+        cout << "Write covariances between initial value and fluctuating forces: " << out_path/"ff_cov_extended.f64" << endl;
+        ff_cov_extended.write("ff_cov_extended.f64", out_path);
+    }
+}
+
+tensor<double,3> KernelMethods::simulateTrajectories(
+    tensor<double,3> &traj,
+    tensor<double,3> &drift,
+    tensor<double,4> &kernel,
+    tensor<double,1> &mean_initial_value,
+    RandomForceGenerator &rfg,
+    double dt,
+    bool shift,
+    bool gaussian_init_val,
+    bool darboux_sum,
+    size_t num_sim,
+    filesystem::path out_path)
+{
+    size_t num_traj = traj.shape[0];
+    size_t num_ts = traj.shape[1];
+    size_t num_obs = traj.shape[2];
+
+    if(gaussian_init_val)
+    {
+        traj.clear();
     }
 
-    gsl_matrix * in_buffer = gsl_matrix_alloc(num_traj,num_ts*num_obs);
-    ff_cov *= sqrt(1.0/(num_traj-1));
-    ff_cov >> *in_buffer->data;
-    ff_cov.clear();
+    tensor<double,3> sim;
+    tensor<double,3> rand_ff({num_sim,num_ts,num_obs});
+    if(darboux_sum)
+    {
+        kernel=kernel.transpose({0,1,3,2});
+        tensor<double,2> rand_ff_buffer;
+        sim.alloc({num_ts,num_obs,num_sim});
+        for(size_t n=0;n<num_sim; n++)
+        {
+            rand_ff_buffer = rfg.pull_multivariate_gaussian();
+            if(!gaussian_init_val)
+            {
+                for(size_t i=0; i<num_obs; i++)
+                {
+                    sim(0,i,n) = traj(n%num_traj,0,i); // set initial value
+                }
+                memcpy(&rand_ff(n),&rand_ff_buffer[0],num_ts*num_obs*sizeof(double));
+            }
+            else
+            {
+                for(size_t i=0; i<num_obs; i++)
+                {
+                    sim(0,i,n) = rand_ff_buffer(0,i); // set initial value
+                }
+                memcpy(&rand_ff(n),&rand_ff_buffer(1),num_ts*num_obs*sizeof(double));
+            }
+        }
+        gsl_matrix * out = gsl_matrix_alloc(num_obs,num_sim);
+        tensor<double,2> buff({num_obs,num_sim},0.0);
+        for(size_t t=0;t+1<num_ts;t++)
+        {
+            if(t>0)
+            {
+                gsl_matrix_const_view kernel_t1 = gsl_matrix_const_view_array(&kernel(t),t*num_obs,num_obs);
+                gsl_matrix_const_view trajectory = gsl_matrix_const_view_array(&sim[0],t*num_obs,num_sim);
+                gsl_blas_dgemm(CblasTrans,CblasNoTrans,1.0,&kernel_t1.matrix,&trajectory.matrix,0.0,out);
+                buff << *out->data;
+            }
+            buff*=dt;
+            for(size_t n=0;n<num_sim;n++)
+            {
+                for(size_t i = 0; i<num_obs; i++)
+                {
+                    for(size_t k = 0; k<num_obs; k++)
+                    {
+                        buff(i,n) += drift(t,i,k)*sim(t,k,n);
+                    }
+                    buff(i,n) += rand_ff(n,t,i);
+                }
+                for(size_t i=0;i<num_obs;i++)
+                {
+                    sim(t+1,i,n) = sim(t,i,n)+dt*buff(i,n);
+                }
+            }
+        }
+        gsl_matrix_free(out);
+        if(shift)
+        {
+            for(size_t n=0;n<num_sim; n++)
+            {
+                for(size_t t=0; t<num_ts; t++)
+                {
+                    for(size_t o=0; o<num_obs; o++)
+                    {
+                        sim(t,o,n) += mean_initial_value[o];
+                    }
+                }
+            }
+        }
+        sim=sim.transpose({2,0,1});
+    }
+    else
+    {
+        tensor<double,2> rand_ff_buffer;
+        tensor<double,2> rand_ff_n({num_ts,num_obs});
+        tensor<double,2> simulated_trajectory({num_ts,num_obs});
+        RK4 rk4;
+        sim.alloc({num_sim,num_ts,num_obs});
+        for(size_t n=0;n<num_sim; n++)
+        {
 
-    gsl_matrix * out_buffer = gsl_matrix_alloc(num_ts*num_obs,num_ts*num_obs);
+            rand_ff_buffer = rfg.pull_multivariate_gaussian();
 
-    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, in_buffer, in_buffer, 0.0, out_buffer);
-    gsl_matrix_free(in_buffer);
+            if(!gaussian_init_val)
+            {
+                for(size_t i=0; i<num_obs; i++)
+                {
+                    simulated_trajectory(0,i) = traj(n%num_traj,0,i); // set initial value
+                }
+                rand_ff_n = rand_ff_buffer;
+            }
+            else
+            {
+                for(size_t i=0; i<num_obs; i++)
+                {
+                    simulated_trajectory(0,i) = rand_ff_buffer(0,i); // set initial value
+                }
+                rand_ff_n << rand_ff_buffer(1);
+            }
 
-    ff_cov.alloc({num_ts,num_obs,num_ts,num_obs});
-    ff_cov << *out_buffer->data;
-    gsl_matrix_free(out_buffer);
-    cout << "Write covariance matrix of initial values and fluctuating forces: " << out_folder+"/"+"ff_cov.f64" << endl;
-    ff_cov.write("ff_cov.f64", out_folder);
+            rk4.integrate(dt,drift,kernel,simulated_trajectory,rand_ff_n);
+
+            if(shift)
+            {
+                for(size_t t=0; t<num_ts; t++)
+                {
+                    for(size_t o=0; o<num_obs; o++)
+                    {
+                        simulated_trajectory(t,o) += mean_initial_value[o];
+                    }
+                }
+            }
+            simulated_trajectory >> sim(n);
+            rand_ff_n >> rand_ff(n);
+        }
+    }
+    cout << "Write random fluctuating forces: " << (out_path/"SIM")/"rand_ff.f64" << endl;
+    filesystem::create_directories(out_path/"SIM");
+    rand_ff.write("rand_ff.f64",out_path/"SIM");
+    return sim;
+}
+
+tensor<double,3> KernelMethods::simulateTrajectories(
+    tensor<double,3> &traj,
+    tensor<double,2> &drift,
+    tensor<double,3> &kernel,
+    tensor<double,1> &mean_initial_value,
+    RandomForceGenerator &rfg,
+    double dt,
+    bool shift,
+    bool gaussian_init_val,
+    bool darboux_sum,
+    size_t num_sim,
+    filesystem::path out_path)
+{
+    size_t num_traj = traj.shape[0];
+    size_t num_ts = traj.shape[1];
+    size_t num_obs = traj.shape[2];
+
+    if(gaussian_init_val)
+    {
+        traj.clear();
+    }
+
+    tensor<double,3> sim;
+    tensor<double,3> rand_ff({num_sim,num_ts,num_obs});
+    if(darboux_sum)
+    {
+        tensor<double,3> kernel_buffer(kernel.shape);
+        for(size_t t=0; t<kernel.shape[0]; t++)
+        {
+            for(size_t i=0;i<kernel.shape[1];i++)
+            {
+                for(size_t j=0;j<kernel.shape[2];j++)
+                {
+                    kernel_buffer(kernel.shape[0]-1-t,i,j) = kernel(t,i,j);
+                }
+            }
+        }
+        kernel = kernel_buffer;
+        kernel_buffer.clear();
+        kernel=kernel.transpose({0,2,1}); //kernel=kernel.transpose({0,1,3,2});
+        tensor<double,2> rand_ff_buffer;
+        filesystem::create_directories(out_path/"SIM");
+        sim.alloc({num_ts,num_obs,num_sim});
+        for(size_t n=0;n<num_sim; n++)
+        {
+            rand_ff_buffer = rfg.pull_multivariate_gaussian();
+            if(!gaussian_init_val)
+            {
+                for(size_t i=0; i<num_obs; i++)
+                {
+                    sim(0,i,n) = traj(n%num_traj,0,i); // set initial value
+                }
+                memcpy(&rand_ff(n),&rand_ff_buffer[0],num_ts*num_obs*sizeof(double));
+            }
+            else
+            {
+                for(size_t i=0; i<num_obs; i++)
+                {
+                    sim(0,i,n) = rand_ff_buffer(0,i); // set initial value
+                }
+                memcpy(&rand_ff(n),&rand_ff_buffer(1),num_ts*num_obs*sizeof(double));
+            }
+        }
+        gsl_matrix * out = gsl_matrix_alloc(num_obs,num_sim);
+        tensor<double,2> buff({num_obs,num_sim},0.0);
+        for(size_t t=0;t+1<num_ts;t++)
+        {
+            if(t>0)
+            {
+                gsl_matrix_const_view kernel_t1 = gsl_matrix_const_view_array(&kernel( (kernel.shape[0]+1)/2-1 -t ),t*num_obs,num_obs);
+                gsl_matrix_const_view trajectory = gsl_matrix_const_view_array(&sim[0],t*num_obs,num_sim);
+                gsl_blas_dgemm(CblasTrans,CblasNoTrans,1.0,&kernel_t1.matrix,&trajectory.matrix,0.0,out);
+                buff << *out->data;
+            }
+            buff*=dt;
+            for(size_t n=0;n<num_sim;n++)
+            {
+                for(size_t i = 0; i<num_obs; i++)
+                {
+                    for(size_t k = 0; k<num_obs; k++)
+                    {
+                        buff(i,n) += drift(i,k)*sim(t,k,n);
+                    }
+                    buff(i,n) += rand_ff(n,t,i);
+                }
+                for(size_t i=0;i<num_obs;i++)
+                {
+                    sim(t+1,i,n) = sim(t,i,n)+dt*buff(i,n);
+                }
+            }
+        }
+        gsl_matrix_free(out);
+        if(shift)
+        {
+            for(size_t n=0;n<num_sim; n++)
+            {
+                for(size_t t=0; t<num_ts; t++)
+                {
+                    for(size_t o=0; o<num_obs; o++)
+                    {
+                        sim(t,o,n) += mean_initial_value[o];
+                    }
+                }
+            }
+        }
+        sim=sim.transpose({2,0,1});
+    }
+    else
+    {
+        tensor<double,2> rand_ff_buffer;
+        tensor<double,2> rand_ff_n({num_ts,num_obs});
+        tensor<double,2> simulated_trajectory({num_ts,num_obs});
+        RK4 rk4;
+        filesystem::create_directories(out_path/"SIM");
+        sim.alloc({num_sim,num_ts,num_obs});
+        for(size_t n=0;n<num_sim; n++)
+        {
+
+            rand_ff_buffer = rfg.pull_multivariate_gaussian();
+
+            if(!gaussian_init_val)
+            {
+                for(size_t i=0; i<num_obs; i++)
+                {
+                    simulated_trajectory(0,i) = traj(n%num_traj,0,i); // set initial value
+                }
+                rand_ff_n = rand_ff_buffer;
+            }
+            else
+            {
+                for(size_t i=0; i<num_obs; i++)
+                {
+                    simulated_trajectory(0,i) = rand_ff_buffer(0,i); // set initial value
+                }
+                rand_ff_n << rand_ff_buffer(1);
+            }
+
+            rk4.integrate(dt,drift,kernel,simulated_trajectory,rand_ff_n);
+
+            if(shift)
+            {
+                for(size_t t=0; t<num_ts; t++)
+                {
+                    for(size_t o=0; o<num_obs; o++)
+                    {
+                        simulated_trajectory(t,o) += mean_initial_value[o];
+                    }
+                }
+            }
+            simulated_trajectory >> sim(n);
+            rand_ff_n >> rand_ff(n);
+        }
+    }
+    cout << "Write random fluctuating forces: "<<  (out_path/"SIM")/"rand_ff.f64" << endl;
+    rand_ff.write("rand_ff.f64",out_path/"SIM");
+    return sim;
 }
 

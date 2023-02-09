@@ -7,8 +7,9 @@ t_min 20
 t_max 60
 increment 1
 shift False
-num_sim 5000
+num_sim 20000
 txt_out False
 mollifier_width 0
 gaussian_init_val True
 darboux_sum True
+stationary True

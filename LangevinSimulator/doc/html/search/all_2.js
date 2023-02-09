@@ -1,6 +1,4 @@
 var searchData=
 [
-  ['getdatafilenames_2',['getDataFilenames',['../namespaceInputOutput.html#ac432ac2c90ba880e168f0ac5ea80e56b',1,'InputOutput']]],
-  ['getfluctuatingforce_3',['getFluctuatingForce',['../namespaceKernelMethods.html#ae1f4a6f8db041497a5ce59bd8a1c2f92',1,'KernelMethods']]],
-  ['getmemorykernel_4',['getMemoryKernel',['../namespaceKernelMethods.html#a2bfc339713b00423bd27be7ab13cf8e6',1,'KernelMethods']]]
+  ['f_3',['f',['../classRK4.html#a40d2e17135b036ec74da27fc2f4064f6',1,'RK4::f(size_t n, double dt, TensorUtils::tensor&lt; double, 3 &gt; &amp;drift, TensorUtils::tensor&lt; double, 4 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)'],['../classRK4.html#a54163ecb3c5ebe06befb0133b3c311df',1,'RK4::f(size_t n, double dt, TensorUtils::tensor&lt; double, 2 &gt; &amp;drift, TensorUtils::tensor&lt; double, 3 &gt; &amp;kernel, TensorUtils::tensor&lt; double, 2 &gt; &amp;traj, TensorUtils::tensor&lt; double, 2 &gt; &amp;rand_ff)']]]
 ];

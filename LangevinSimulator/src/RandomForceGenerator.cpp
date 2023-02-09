@@ -51,7 +51,7 @@ RandomForceGenerator::RandomForceGenerator()
     gsl_rng_set(rng_r, mySeed);
 }
 
-void RandomForceGenerator::init_cov(tensor<double,2> &ff_average, tensor<double,4> &ff_cov, string out_folder)
+void RandomForceGenerator::init_cov(tensor<double,2> &ff_average, tensor<double,4> &ff_cov, filesystem::path out_path)
 {
     // store average
     this->ff_average = ff_average;
@@ -71,8 +71,8 @@ void RandomForceGenerator::init_cov(tensor<double,2> &ff_average, tensor<double,
     set_decomp(ff_cov,ff_decomp);
 
     ff_cov << *ff_decomp->data;
-    cout << "Write rotation matrix: " << out_folder+"/"+"ff_decomp.f64" << endl;
-    ff_cov.write("ff_decomp.f64",out_folder);
+    cout << "Write rotation matrix: " << out_path/"ff_decomp.f64" << endl;
+    ff_cov.write("ff_decomp.f64",out_path);
 }
 
 void RandomForceGenerator::init_decomp(tensor<double,2> &ff_average, tensor<double,4> &ff_decomp)

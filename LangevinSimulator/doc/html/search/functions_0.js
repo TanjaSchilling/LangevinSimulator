@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['difftrajectories_22',['diffTrajectories',['../namespaceKernelMethods.html#acc05c6990735cc17b12ca8f96ef839c8',1,'KernelMethods']]]
+  ['calclowerblocktriangularinverse_34',['calcLowerBlockTriangularInverse',['../namespaceKernelMethods.html#ad3216af78f51ca9f69e1185512672c56',1,'KernelMethods']]]
 ];

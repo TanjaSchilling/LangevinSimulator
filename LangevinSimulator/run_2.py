@@ -31,13 +31,14 @@ import os
 params = ParameterHandler()
 params.out_folder = "./TEST_OUT_2"
 params.in_folder = "./TEST_DATA_2"
-params.shift = False 
+params.shift = True 
 params.fluctuating_force = True 
 params.num_sim = 20000
 params.txt_out = False
 params.mollifier_width = 5
-params.gaussian_init_val = True
+params.gaussian_init_val = False
 params.darboux_sum = True
+params.stationary = False
 
 # RUN CPP EXECUTABLES
 run(params)

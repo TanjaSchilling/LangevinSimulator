@@ -21,6 +21,7 @@ If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "InputOutput.hpp"
+#include "KernelMethods.hpp"
 
 #include "parameter_handler.hpp"
 #include "TensorUtils.hpp"
@@ -120,7 +121,6 @@ int main(int argc, char** argv) {
     {
         cout << "Search trajectories: " << out_path/"traj.f64" << endl;
         traj.read(out_path/"traj.f64");
-
         cout << "Search times: " << out_path/"times.f64" << endl;
         times.read(out_path/"times.f64");
     }
@@ -130,128 +130,36 @@ int main(int argc, char** argv) {
         {
             cout << "Search trajectories: " << in_path/"traj.f64" << endl;
             traj.read(in_path/"traj.f64");
-
             cout << "Search times: " << in_path/"times.f64" << endl;
             times.read(in_path/"times.f64");
         }
         catch(exception &ex)
         {
             cout << "Unable to read binaries. Read trajectories from text files." << endl;
-            vector<string> dataFiles = InputOutput::getDataFilenames(file_range, in_path, in_prefix);
-            if(dataFiles.size()==0) {
-                cout << "Unable to load input files!. -> return." << endl;
-                return 0;
-            }
-            // read
-            traj = InputOutput::readTrajectories(dataFiles,t_min,t_max,increment,num_obs);
+            vector<string> data_files = InputOutput::getDataFilenames(file_range, in_path, in_prefix);
+            traj = InputOutput::readTrajectories(data_files,t_min,t_max,increment,num_obs);
             times = InputOutput::popTimes(traj);
         }
-
         if(shift)
         {
-            cout << "Shift trajectories." << endl;
-            TensorUtils::tensor<double,1> mean_initial_value({num_obs},0.0);
-            for(size_t n=0; n<traj.shape[0]; n++)
-            {
-                for(size_t o=0; o<num_obs; o++)
-                {
-                    mean_initial_value[o] += traj(n,0,o);
-                }
-            }
-            mean_initial_value /= traj.shape[0];
-            cout << "Write mean initial values: " << out_path/"mean_initial_value.f64" << endl;
+            cout << "Shift trajectories and write mean initial values: " << out_path/"mean_initial_value.f64" << endl;
+            TensorUtils::tensor<double,1> mean_initial_value = KernelMethods::shiftTrajectories(traj);
             mean_initial_value.write("mean_initial_value.f64",out_path);
             if(txt_out)
             {
                 mean_initial_value.write("mean_initial_value.txt",out_path);
             }
-            for(size_t n=0; n<traj.shape[0]; n++)
-            {
-                for(size_t t=0; t<traj.shape[1]; t++)
-                {
-                    for(size_t o=0; o<num_obs; o++)
-                    {
-                        traj(n,t,o) -= mean_initial_value[o];
-                    }
-                }
-            }
         }
         if(mollifier_width>1)
         {
             cout << "Mollify trajectories." << endl;
-            size_t num_traj = traj.shape[0];
-            size_t num_ts = traj.shape[1];
-            size_t num_obs = traj.shape[2];
-
-            size_t num_pad = num_ts + 2*mollifier_width+1 -1;
-            while(num_pad&(num_pad-1)) // num_pad is not a power of 2!
-            {
-                num_pad++;
-            }
-
-            TensorUtils::tensor<double> traj_pad({num_traj,num_obs,num_pad},0.0);
-            for(size_t n=0; n<num_traj; n++)
-            {
-                for(size_t o=0;o<num_obs;o++)
-                {
-                    for(size_t t=0;t<num_ts;t++)
-                    {
-                        traj_pad(n,o,t) = traj(n,t,o);
-                    }
-                }
-            }
-            traj.clear();
-
-            TensorUtils::tensor<double> mollifier({num_pad},0.0);
-            double sum = 0.0;
-            for(size_t t=1; t<2*mollifier_width; t++)
-            {
-                mollifier[t] = exp( 1/(pow(double(t)/mollifier_width-1,2)-1) );
-                sum += mollifier[t];
-            }
-            mollifier *= 2.0/(num_pad*sum);
-
-            double * lookup_table = new double[num_pad];
-            FFTBW::FourierTransforms<double>::initLookUp(lookup_table,num_pad);
-            FFTBW::FourierTransforms<double>::fftReal(&mollifier[0],num_pad,+1,lookup_table,false);
-            for(size_t n=0; n<num_traj; n++)
-            {
-                for(size_t o=0;o<num_obs;o++)
-                {
-                    FFTBW::FourierTransforms<double>::convolve(&traj_pad(n,o),&mollifier[0],num_pad,lookup_table,false);
-                }
-            }
-            delete[] lookup_table;
-
-            traj.alloc({num_traj,num_ts-2*mollifier_width,num_obs});
-            for(size_t n=0; n<num_traj; n++)
-            {
-                for(size_t t=0;t<num_ts-2*mollifier_width;t++)
-                {
-                    for(size_t o=0;o<num_obs;o++)
-                    {
-                        traj(n,t,o) = traj_pad(n,o,t+2*mollifier_width);
-                    }
-                }
-            }
-            traj_pad.clear();
-            TensorUtils::tensor<double> new_times({num_ts-2*mollifier_width});
-            new_times << times[mollifier_width];
-            times = new_times;
-            new_times.clear();
+            KernelMethods::mollifyTrajectories(times,traj,mollifier_width);
         }
         cout << "Write trajectories: " << out_path/"traj.f64" << endl;
         traj.write("traj.f64",out_path);
         cout << "Write times: " << out_path/"times.f64" << endl;
         times.write("times.f64",out_path);
     }
-
-    // set dimensions
-    size_t num_traj = traj.shape[0];
-    size_t num_ts = traj.shape[1];
-    num_obs = traj.shape[2];
-
-	cout << "# Found " << num_traj << " trajectories with " << num_ts << " time-steps and " << num_obs << " observables." << endl;
 
     /**
         CORRELATION FUNCTION
@@ -267,16 +175,7 @@ int main(int argc, char** argv) {
         catch(exception &ex)
         {
             cout << "Unable to read binary. Calculate correlation function." << endl;
-            gsl_matrix * in_buffer = gsl_matrix_alloc(num_traj,num_ts*num_obs);
-            traj *= sqrt(1.0/num_traj);
-            traj >> *in_buffer->data;
-            traj.clear();
-            gsl_matrix * out_buffer = gsl_matrix_alloc(num_ts*num_obs,num_ts*num_obs);
-            gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, in_buffer, in_buffer, 0.0, out_buffer);
-            gsl_matrix_free(in_buffer);
-            correlation.alloc({num_ts,num_obs,num_ts,num_obs});
-            correlation << *out_buffer->data;
-            gsl_matrix_free(out_buffer);
+            correlation = KernelMethods::getCorrelationFunction(traj);
             cout << "Write correlation function: " << out_path/"correlation.f64" << endl;
             correlation.write("correlation.f64",out_path);
             if(txt_out)
@@ -296,106 +195,9 @@ int main(int argc, char** argv) {
         catch(exception &ex)
         {
             cout << "Unable to read binary. Calculate correlation function." << endl;
-
-            size_t num_pad = 2*num_ts-1;
-            while(num_pad&(num_pad-1)) // num_pad is not a power of 2!
-            {
-                num_pad++;
-            }
-            TensorUtils::tensor<double> traj_pad({num_traj,num_obs,num_pad},0.0);
-            for(size_t n=0; n<num_traj; n++)
-            {
-                for(size_t o=0;o<num_obs;o++)
-                {
-                    for(size_t t=0;t<num_ts;t++)
-                    {
-                        traj_pad(n,o,t) = traj(n,t,o);
-                    }
-                }
-            }
-            //traj.clear();
-            double * lookup_table = new double[num_pad];
-            FFTBW::FourierTransforms<double>::initLookUp(lookup_table,num_pad);
-            for(size_t n=0; n<num_traj; n++)
-            {
-                for(size_t o=0;o<num_obs;o++)
-                {
-                    FFTBW::FourierTransforms<double>::fftReal(&traj_pad(n,o),num_pad,+1,lookup_table,false);
-                }
-            }
-            correlation.alloc({num_obs,num_obs,num_pad},0.0);
-            for(size_t n=0;n<num_traj;n++)
-            {
-                for(size_t o1=0;o1<num_obs;o1++)
-                {
-                    for(size_t o2=0;o2<num_obs;o2++)
-                    {
-                        correlation(o1,o2,0) += traj_pad(n,o1,0)*traj_pad(n,o2,0);
-                        correlation(o1,o2,1) += traj_pad(n,o1,1)*traj_pad(n,o2,1);
-                        for(size_t k=2;k<num_pad;k+=2)
-                        {
-                            correlation(o1,o2,k) += traj_pad(n,o1,k)*traj_pad(n,o2,k)+traj_pad(n,o1,k+1)*traj_pad(n,o2,k+1);
-                            correlation(o1,o2,k+1) +=  -1*traj_pad(n,o1,k)*traj_pad(n,o2,k+1)+traj_pad(n,o1,k+1)*traj_pad(n,o2,k);
-                        }
-                    }
-                }
-            }
-            for(size_t o1=0;o1<num_obs;o1++)
-            {
-                for(size_t o2=0;o2<num_obs;o2++)
-                {
-                    FFTBW::FourierTransforms<double>::fftReal(&correlation(o1,o2),num_pad,-1,lookup_table,false);
-                }
-            }
-            delete[] lookup_table;
-            correlation=correlation.transpose({2,0,1});
-            double dummy;
-            for(size_t t=0;t<num_ts;t++)
-            {
-                dummy = 1.0/(num_ts-t);
-                for(size_t i=0;i<num_obs;i++)
-                {
-                    for(size_t j=0;j<num_obs;j++)
-                    {
-                        correlation(t,i,j) *= dummy;
-                    }
-                }
-            }
-            for(size_t t=1;t<num_ts;t++)
-            {
-                dummy = 1.0/(num_ts-t);
-                for(size_t i=0;i<num_obs;i++)
-                {
-                    for(size_t j=0;j<num_obs;j++)
-                    {
-                        correlation(num_pad-t,i,j) *= dummy;
-                    }
-                }
-            }
-            correlation *= 2.0/(num_pad*num_traj);
-            TensorUtils::tensor<double,3> corr_out({2*num_ts-1,num_obs,num_obs});
-            for(size_t tau=0;tau<num_ts;tau++)
-            {
-                for(size_t k=0;k<num_obs;k++)
-                {
-                    for(size_t l=0;l<num_obs;l++)
-                    {
-                        corr_out(num_ts-1+tau,k,l) = correlation(tau,k,l);
-                    }
-                }
-            }
-            for(size_t tau=1;tau<num_ts;tau++)
-            {
-                for(size_t k=0;k<num_obs;k++)
-                {
-                    for(size_t l=0;l<num_obs;l++)
-                    {
-                        corr_out(num_ts-1-tau,k,l) = correlation(num_pad-tau,k,l);
-                    }
-                }
-            }
+            correlation = KernelMethods::getStationaryCorrelation(traj);
             cout << "Write correlation function: " << out_path/"correlation_stationary.f64" << endl;
-            corr_out.write("correlation_stationary.f64",out_path);
+            correlation.write("correlation_stationary.f64",out_path);
             if(txt_out)
             {
                 double dt = times[1]-times[0];
@@ -405,7 +207,7 @@ int main(int argc, char** argv) {
                     new_times[times.size()-1+t] = +dt*t;
                     new_times[times.size()-1-t] = -dt*t;
                 }
-                InputOutput::write(new_times,corr_out,out_path/"correlation_stationary.txt");
+                InputOutput::write(new_times,correlation,out_path/"correlation_stationary.txt");
             }
         }
     }

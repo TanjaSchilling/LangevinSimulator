@@ -65,12 +65,6 @@ int main(int argc, char *argv[]) {
 		throw ex;
 	}
 
-	if(stationary)
-	{
-        cout << "Set 'stationary' to false. Missing implementation." << endl;
-        return 1;
-	}
-
 	cout << "PARAMETERS: " << endl;
 	cout << "out_folder" << '\t'<< out_folder << endl;
 	cout << "txt_out" << '\t'<< txt_out << endl;
@@ -79,92 +73,148 @@ int main(int argc, char *argv[]) {
 
 	filesystem::path out_path = out_folder;
 
-    tensor<double,3> fluctuating_force;
-    try
+    if(!stationary)
     {
-        cout << "Search fluctuating forces: " << out_path/"ff.f64" << endl;
-        fluctuating_force.read(out_path/"ff.f64");
-    }
-    catch(exception &ex)
-    {
-        cout << "Unable to read binary. Calculate fluctuating forces." << endl;
-
-        cout << "Load memory kernel from: " << out_path/"kernel.f64" << endl;
-        tensor<double,4> kernel;
-        kernel.read(out_path/"kernel.f64");
-
-        cout << "Load trajectories from: " << out_path/"traj.f64" << endl;
-        tensor<double,3> trajectories;
-        trajectories.read(out_path/"traj.f64");
-
-        cout << "Load times from: " << out_path/"times.f64" << endl;
-        tensor<double,1> times;
-        times.read(out_path/"times.f64");
-
-        cout << "Search drift term: " << out_path/"drift.f64" << endl;
-        tensor<double,3> drift;
-        drift.read(out_path/"drift.f64");
-
-        // set args
-        size_t num_traj = trajectories.shape[0];
-        size_t num_ts = trajectories.shape[1];
-        size_t num_obs = trajectories.shape[2];
-        cout << "Loaded "<< num_traj << " trajectories with " << num_ts << " timesteps and " << num_obs << " observables." << endl;
-
-        // calculate fluctuating forces
-        fluctuating_force = KernelMethods::getFluctuatingForce(kernel, drift, trajectories, times, darboux_sum);
-
-        cout << "Write fluctuating forces." << endl;
-        fluctuating_force.write("ff.f64",out_path);
-        if(txt_out)
+        tensor<double,3> fluctuating_force;
+        try
         {
-            filesystem::create_directories(out_path/"FF");
-            tensor<double,2> ff({fluctuating_force.shape[1],fluctuating_force.shape[2]});
-            for(size_t n=0; n<fluctuating_force.shape[0]; n++)
-            {
-                ff << fluctuating_force[n];
-                InputOutput::write(times,ff,(out_path/"FF")/("ff_"+to_string(n)+".txt"));
-            }
+            cout << "Search fluctuating forces: " << out_path/"ff.f64" << endl;
+            fluctuating_force.read(out_path/"ff.f64");
         }
+        catch(exception &ex)
+        {
+            cout << "Unable to read binary. Calculate fluctuating forces." << endl;
 
-        if(!gaussian_init_val)
-        {
-            cout << "Compute average and covariance matrix of fluctuating forces." << endl;
-            KernelMethods::writeCovarianceMatrix(fluctuating_force, out_path);
-        }
-        else
-        {
-            cout << "Compute average and covariance matrix of initial values and fluctuating forces." << endl;
-            KernelMethods::writeExtendedCovarianceMatrix(trajectories, fluctuating_force, out_path);
-        }
-        return 0;
-    }
+            cout << "Load memory kernel from: " << out_path/"kernel.f64" << endl;
+            tensor<double,4> kernel;
+            kernel.read(out_path/"kernel.f64");
 
-    tensor<double,4> ff_cov;
-    tensor<double,2> ff_average;
-    try
-    {
-        cout << "Search covariance of fluctuating forces: " << out_path/"ff_cov.f64" << endl;
-        ff_cov.read(out_path/"ff_cov.f64");
-        cout << "Search average of fluctuating forces: " << out_path/"ff_average.f64" << endl;
-        ff_average.read(out_path/"ff_average.f64");
-    }
-    catch(exception &ex)
-    {
-        cout << "Unable to read binary." << endl;
-        if(!gaussian_init_val)
-        {
-            cout << "Compute average and covariance matrix of fluctuating forces." << endl;
-            KernelMethods::writeCovarianceMatrix(fluctuating_force, out_path);
-        }
-        else
-        {
             cout << "Load trajectories from: " << out_path/"traj.f64" << endl;
             tensor<double,3> trajectories;
             trajectories.read(out_path/"traj.f64");
 
-            cout << "Compute average and covariance matrix of initial values and fluctuating forces." << endl;
-            KernelMethods::writeExtendedCovarianceMatrix(trajectories, fluctuating_force, out_path);
+            cout << "Load times from: " << out_path/"times.f64" << endl;
+            tensor<double,1> times;
+            times.read(out_path/"times.f64");
+
+            cout << "Search drift term: " << out_path/"drift.f64" << endl;
+            tensor<double,3> drift;
+            drift.read(out_path/"drift.f64");
+
+            // calculate fluctuating forces
+            fluctuating_force = KernelMethods::getFluctuatingForce(kernel, drift, trajectories, times, darboux_sum);
+
+            cout << "Write fluctuating forces." << endl;
+            fluctuating_force.write("ff.f64",out_path);
+            if(txt_out)
+            {
+                filesystem::create_directories(out_path/"FF");
+                tensor<double,2> ff({fluctuating_force.shape[1],fluctuating_force.shape[2]});
+                for(size_t n=0; n<fluctuating_force.shape[0]; n++)
+                {
+                    ff << fluctuating_force[n];
+                    InputOutput::write(times,ff,(out_path/"FF")/("ff_"+to_string(n)+".txt"));
+                }
+            }
+        }
+        tensor<double,4> ff_cov;
+        tensor<double,2> ff_average;
+        try
+        {
+            cout << "Search covariance of fluctuating forces: " << out_path/"ff_cov.f64" << endl;
+            ff_cov.read(out_path/"ff_cov.f64");
+            cout << "Search average of fluctuating forces: " << out_path/"ff_average.f64" << endl;
+            ff_average.read(out_path/"ff_average.f64");
+        }
+        catch(exception &ex)
+        {
+            cout << "Unable to read binary." << endl;
+            if(!gaussian_init_val)
+            {
+                cout << "Compute average and covariance matrix of fluctuating forces." << endl;
+                KernelMethods::writeCovarianceMatrix(fluctuating_force, out_path);
+            }
+            else
+            {
+                cout << "Load trajectories from: " << out_path/"traj.f64" << endl;
+                tensor<double,3> trajectories;
+                trajectories.read(out_path/"traj.f64");
+
+                cout << "Compute average and covariance matrix of initial values and fluctuating forces." << endl;
+                KernelMethods::writeExtendedCovarianceMatrix(trajectories, fluctuating_force, out_path);
+            }
+        }
+    }
+    else
+    {
+        tensor<double,3> fluctuating_force;
+        try
+        {
+            cout << "Search fluctuating forces: " << out_path/"ff.f64" << endl;
+            fluctuating_force.read(out_path/"ff.f64");
+        }
+        catch(exception &ex)
+        {
+            cout << "Unable to read binary. Calculate fluctuating forces." << endl;
+
+            cout << "Load memory kernel from: " << out_path/"kernel_stationary.f64" << endl;
+            tensor<double,3> kernel;
+            kernel.read(out_path/"kernel_stationary.f64");
+
+            cout << "Load trajectories from: " << out_path/"traj.f64" << endl;
+            tensor<double,3> trajectories;
+            trajectories.read(out_path/"traj.f64");
+
+            cout << "Load times from: " << out_path/"times.f64" << endl;
+            tensor<double,1> times;
+            times.read(out_path/"times.f64");
+
+            cout << "Search drift term: " << out_path/"drift_stationary.f64" << endl;
+            tensor<double,2> drift;
+            drift.read(out_path/"drift_stationary.f64");
+
+            // calculate fluctuating forces
+            fluctuating_force = KernelMethods::getFluctuatingForce(kernel, drift, trajectories, times, darboux_sum);
+
+            cout << "Write fluctuating forces." << endl;
+            fluctuating_force.write("ff.f64",out_path);
+            if(txt_out)
+            {
+                filesystem::create_directories(out_path/"FF");
+                tensor<double,2> ff({fluctuating_force.shape[1],fluctuating_force.shape[2]});
+                for(size_t n=0; n<fluctuating_force.shape[0]; n++)
+                {
+                    ff << fluctuating_force[n];
+                    InputOutput::write(times,ff,(out_path/"FF")/("ff_"+to_string(n)+".txt"));
+                }
+            }
+        }
+        tensor<double,3> ff_cov;
+        tensor<double,2> ff_average;
+        try
+        {
+            cout << "Search covariance of fluctuating forces: " << out_path/"ff_cov_stationary.f64" << endl;
+            ff_cov.read(out_path/"ff_cov.f64");
+            cout << "Search average of fluctuating forces: " << out_path/"ff_average.f64" << endl;
+            ff_average.read(out_path/"ff_average.f64");
+        }
+        catch(exception &ex)
+        {
+            cout << "Unable to read binary." << endl;
+            if(!gaussian_init_val)
+            {
+                cout << "Compute average and covariance matrix of fluctuating forces." << endl;
+                KernelMethods::writeCovarianceMatrix(fluctuating_force, out_path, true);
+            }
+            else
+            {
+                cout << "Load trajectories from: " << out_path/"traj.f64" << endl;
+                tensor<double,3> trajectories;
+                trajectories.read(out_path/"traj.f64");
+
+                cout << "Compute average and covariance matrix of initial values and fluctuating forces." << endl;
+                KernelMethods::writeExtendedCovarianceMatrix(trajectories, fluctuating_force, out_path, true);
+            }
         }
     }
 

@@ -26,6 +26,7 @@ If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <regex>
 #include <gsl/gsl_matrix.h>
+#include <filesystem>
 
 #include "TensorUtils.hpp"
 
@@ -74,7 +75,7 @@ namespace InputOutput
 
         The first column stores the times, the following columns contain the observables.
     */
-    void write(TensorUtils::tensor<double,1> &times, TensorUtils::tensor<double,2> &traj, std::string path);
+    void write(TensorUtils::tensor<double,1> &times, TensorUtils::tensor<double,2> &traj, std::filesystem::path out_path);
 
     /*!
         \brief Write square matrices as a function of two times to a text file. Directory must exist.
@@ -82,7 +83,7 @@ namespace InputOutput
         This function is used to write the memory kernel and correlation function to text files.
         The first two columns contain the two times, the following columns contain the matrix elements in lexicographical order.
     */
-    void write(TensorUtils::tensor<double,1> &times, TensorUtils::tensor<double,4> &corr, std::string path);
+    void write(TensorUtils::tensor<double,1> &times, TensorUtils::tensor<double,4> &corr, std::filesystem::path out_path);
 
     /*!
         \brief Write square matrices as a function of time to a text file. Directory must exist.
@@ -90,7 +91,7 @@ namespace InputOutput
         This function is used to write the drift term to text files.
         The first column contains the times, the following columns contain the matrix elements in lexicographical order.
     */
-    void write(TensorUtils::tensor<double,1> &times, TensorUtils::tensor<double,3> &corr, std::string path);
+    void write(TensorUtils::tensor<double,1> &times, TensorUtils::tensor<double,3> &corr, std::filesystem::path out_path);
 }
 
 #endif	// KERNEL_INPUTOUTPUT_H_
