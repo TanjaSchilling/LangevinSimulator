@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
                 tensor<double,2> ff({fluctuating_force.shape[1],fluctuating_force.shape[2]});
                 for(size_t n=0; n<fluctuating_force.shape[0]; n++)
                 {
-                    ff << fluctuating_force[n];
+                    ff << fluctuating_force(n);
                     InputOutput::write(times,ff,(out_path/"FF")/("ff_"+to_string(n)+".txt"));
                 }
             }
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
                 tensor<double,2> ff({fluctuating_force.shape[1],fluctuating_force.shape[2]});
                 for(size_t n=0; n<fluctuating_force.shape[0]; n++)
                 {
-                    ff << fluctuating_force[n];
+                    ff << fluctuating_force(n);
                     InputOutput::write(times,ff,(out_path/"FF")/("ff_"+to_string(n)+".txt"));
                 }
             }
