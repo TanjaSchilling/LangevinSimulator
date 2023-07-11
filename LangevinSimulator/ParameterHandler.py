@@ -61,7 +61,8 @@ class ParameterHandler:
                  mollifier_width=10,
                  gaussian_init_val=False,
                  darboux_sum=True,
-                 stationary=False):
+                 stationary=False,
+                 chop_stationary_trajectories=0):
         self.out_folder = out_folder
         self.in_folder = in_folder
         self.in_prefix = in_prefix
@@ -82,6 +83,7 @@ class ParameterHandler:
         self.gaussian_init_val = gaussian_init_val
         self.darboux_sum = darboux_sum
         self.stationary = stationary
+        self.chop_stationary_trajectories = chop_stationary_trajectories
 
     def get_parameter_file(self):
         parameter_file = """\
@@ -99,7 +101,8 @@ txt_out {txt_out}
 mollifier_width {mollifier_width}
 gaussian_init_val {gaussian_init_val}
 darboux_sum {darboux_sum}
-stationary {stationary}""".format(
+stationary {stationary}
+chop_stationary_trajectories {chop_stationary_trajectories}""".format(
             out_folder=self.out_folder,
             in_folder=self.in_folder,
             in_prefix=self.in_prefix,
@@ -114,7 +117,8 @@ stationary {stationary}""".format(
             mollifier_width=self.mollifier_width,
             gaussian_init_val=self.gaussian_init_val,
             darboux_sum=self.darboux_sum,
-            stationary=self.stationary)
+            stationary=self.stationary,
+            chop_stationary_trajectories=self.chop_stationary_trajectories)
         return parameter_file
 
     def write_parameter_file(self, parameter_filename):
