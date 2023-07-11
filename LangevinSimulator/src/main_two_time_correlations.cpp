@@ -58,6 +58,7 @@ int main(int argc, char** argv) {
 	bool txt_out;
 	size_t mollifier_width;
 	bool stationary;
+	size_t chop_stationary_trajectories;
 
 	ParameterHandler cmdtool {argc, argv};
 	cmdtool.process_flag_help();
@@ -76,6 +77,9 @@ int main(int argc, char** argv) {
 		cmdtool.add_usage("mollifier_width: unsigned integer. Total width of the mollifier is 2*<mollifier_width> time-steps. \
                     No effect, if <mollifier_width> is set to zero. If <mollifier_width> is positive, all input trajectories will be mollified.");
 		cmdtool.add_usage("stationary: Boolean. If true, treats the process as stationary. Default: false.");
+		cmdtool.add_usage("chop_stationary_trajectories: Unsigned integer. No effect, if <chop_stationary_trajectories>=0 or <stationary>=false. \
+                    Chops the trajectories into smaller pieces with size <chop_stationary_trajectories>, \
+                    but uses the 'unchopped' trajectories to compute the correlation function. Default: 0.");
 		// TODO parameters for choosing a certain file set
 
 		in_folder = cmdtool.get_string("in_folder","./TEST_DATA");
@@ -90,6 +94,8 @@ int main(int argc, char** argv) {
 		txt_out = cmdtool.get_bool("txt_out", true);
 		mollifier_width = cmdtool.get_int("mollifier_width", 0);
 		stationary = cmdtool.get_bool("stationary", false);
+		chop_stationary_trajectories = cmdtool.get_int("chop_stationary_trajectories", 0);
+
 	} catch (const ParameterHandler::BadParamException &ex) {
 		cmdtool.show_usage();
 		throw ex;
@@ -116,6 +122,8 @@ int main(int argc, char** argv) {
     **/
 	TensorUtils::tensor<double,3> traj;
     TensorUtils::tensor<double,1> times;
+    vector<size_t> unchopped_shape;
+    vector<size_t> chopped_shape;
 
     try
     {
@@ -140,6 +148,44 @@ int main(int argc, char** argv) {
             traj = InputOutput::readTrajectories(data_files,t_min,t_max,increment,num_obs);
             times = InputOutput::popTimes(traj);
         }
+        if(mollifier_width>1)
+        {
+            cout << "Mollify trajectories." << endl;
+            KernelMethods::mollifyTrajectories(times,traj,mollifier_width);
+        }
+        if(stationary)
+        {
+            if(chop_stationary_trajectories>0)
+            {
+                if(chop_stationary_trajectories>traj.shape[1])
+                {
+                    chop_stationary_trajectories=0;
+                }
+                else
+                {
+                    TensorUtils::tensor<double,3> buffer({traj.shape[0],traj.shape[1]-traj.shape[1]%chop_stationary_trajectories,traj.shape[2]});
+                    for(size_t n=0; n< buffer.shape[0]; n++)
+                    {
+                        for(size_t t=0; t<buffer.shape[1]; t++)
+                        {
+                            for(size_t o=0; o<buffer.shape[2]; o++)
+                            {
+                                buffer(n,t,o) = traj(n,t,o);
+                            }
+                        }
+                    }
+                    traj = buffer;
+                    buffer.clear();
+                    unchopped_shape = traj.shape;
+                    chopped_shape = {traj.shape[0]*(traj.shape[1]/chop_stationary_trajectories),chop_stationary_trajectories,traj.shape[2]};
+                    traj.reshape(chopped_shape);
+                    TensorUtils::tensor<double,1> new_times({traj.shape[1]});
+                    new_times << times[0];
+                    times = new_times;
+                    new_times.clear();
+                }
+            }
+        }
         if(shift)
         {
             cout << "Shift trajectories and write mean initial values: " << out_path/"mean_initial_value.f64" << endl;
@@ -149,11 +195,6 @@ int main(int argc, char** argv) {
             {
                 mean_initial_value.write("mean_initial_value.txt",out_path);
             }
-        }
-        if(mollifier_width>1)
-        {
-            cout << "Mollify trajectories." << endl;
-            KernelMethods::mollifyTrajectories(times,traj,mollifier_width);
         }
         cout << "Write trajectories: " << out_path/"traj.f64" << endl;
         traj.write("traj.f64",out_path);
@@ -195,7 +236,28 @@ int main(int argc, char** argv) {
         catch(exception &ex)
         {
             cout << "Unable to read binary. Calculate correlation function." << endl;
+            if(chopped_shape.size()>0)
+            {
+                traj.reshape(unchopped_shape);
+            }
             correlation = KernelMethods::getStationaryCorrelation(traj);
+            if(chopped_shape.size()>0)
+            {
+                traj.reshape(chopped_shape);
+                TensorUtils::tensor<double,3> buffer({2*traj.shape[1]-1,traj.shape[2],traj.shape[2]});
+                for(size_t i=0; i<traj.shape[2]; i++)
+                {
+                    for(size_t j=0; j<traj.shape[2]; j++)
+                    {
+                        for(int tau=1-traj.shape[1]; tau<(int)traj.shape[1]; tau++)
+                        {
+                            buffer(traj.shape[1]-1+tau,i,j) = correlation(unchopped_shape[1]-1+tau,i,j);
+                        }
+                    }
+                }
+                correlation = buffer;
+                buffer.clear();
+            }
             cout << "Write correlation function: " << out_path/"correlation_stationary.f64" << endl;
             correlation.write("correlation_stationary.f64",out_path);
             if(txt_out)
