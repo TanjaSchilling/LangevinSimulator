@@ -237,6 +237,46 @@ tensor<double,3> KernelMethods::getStationaryCorrelation(tensor<double,3> &traj,
         }
     }
     corr_out *= 2.0/num_pad;
+    /** TEST
+    tensor<double, 3> corr_test(corr_out.shape, 0.0);
+    for(size_t n=0; n<traj.shape[0]; n++)
+    {
+        for(int tau=0; tau<traj.shape[1]; tau++)
+        {
+            for(int r=0; r+tau<traj.shape[1]; r++)
+            {
+                for(size_t i=0; i < traj.shape[2]; i++)
+                {
+                    for(size_t j=0; j < corr_test.shape[2]; j++)
+                    {
+                        corr_test(traj.shape[1]-1+tau,i,j) += traj(n,r+tau,i)*traj(n,r,j);
+                        if(tau>0)
+                        {
+                            corr_test(traj.shape[1]-1-tau,j,i) += traj(n,r+tau,i)*traj(n,r,j);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    corr_test /= traj.shape[0];
+    for(int tau=0; tau<traj.shape[1]; tau++)
+    {
+        for(size_t i=0; i < traj.shape[2]; i++)
+        {
+            for(size_t j=0; j < corr_test.shape[2]; j++)
+            {
+                corr_test(traj.shape[1]-1+tau,i,j) /= (traj.shape[1]-tau);
+                if(tau>0)
+                {
+                    corr_test(traj.shape[1]-1-tau,j,i) /= (traj.shape[1]-tau);
+                }
+            }
+        }
+    }
+    corr_test.write("corr_test.txt", "./");
+    corr_out.write("corr_out.txt", "./");
+    **/ 
     return corr_out;
 }
 
