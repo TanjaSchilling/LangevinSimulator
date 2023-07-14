@@ -91,7 +91,7 @@ plt.legend()
 plt.savefig("corr01.png")
 plt.show()
 
-data=readBinary("../TEST_OUT/kernel.f64")
+data=readBinary("../TEST_OUT/kernel_stationary.f64")
 plt.plot(data[:,0,0],color="green",label="memory kernel of original trajectories, observable 0x0")
 data = readBinary("kernel_stationary.f64")
 plt.plot(data[:,0,0],color="blue",label="memory kernel of simulations, observable 0x0")
