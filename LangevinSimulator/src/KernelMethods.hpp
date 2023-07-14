@@ -232,8 +232,7 @@ namespace KernelMethods {
         bool gaussian_init_val,
         bool darboux_sum,
         size_t num_sim,
-        std::filesystem::path out_path,
-        bool accelerate_stationary_decomp);
+        std::filesystem::path out_path);
 }
 
 #endif  // KERNEL_KERNELMETHODS_H_

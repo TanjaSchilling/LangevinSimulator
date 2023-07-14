@@ -36,27 +36,9 @@ If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 using namespace TensorUtils;
 
-#include "FourierTransforms.hpp"
-
 int main(int argc, char *argv[]) {
 
     cout << "BEGIN: main_simulator" << endl;
-
-//    tensor<double> test({64}, 1.0);
-//    double * lookup = new double[64];
-//    for(size_t n=0;n<64;n++)
-//    {
-//        test[n] += std::sin(2*M_PI*n/64);
-//    }
-//    FFTBW::FourierTransforms<double>::initLookUp(lookup,64);
-//    FFTBW::FourierTransforms<double>::fftReal(&test[0],64,+1,lookup,false);
-//    //FFTBW::FourierTransforms<double>::fftReal(&test[0],64,-1,lookup,false);
-//    for(size_t n=0;n<64;n++)
-//    {
-//        cout << test[n] << endl;
-//    }
-//    delete[] lookup;
-//    return 0;
 
 	size_t num_sim;
 	string out_folder;
@@ -65,7 +47,6 @@ int main(int argc, char *argv[]) {
 	bool gaussian_init_val;
 	bool darboux_sum;
 	bool stationary;
-	bool accelerate_stationary_decomp;
 
 	ParameterHandler cmdtool {argc, argv};
 	cmdtool.process_flag_help();
@@ -89,11 +70,6 @@ int main(int argc, char *argv[]) {
         darboux_sum = cmdtool.get_bool("darboux_sum", true);
 		cmdtool.add_usage("stationary: Boolean. If true, treats the process as stationary. Default: false.");
 		stationary = cmdtool.get_bool("stationary", false);
-		accelerate_stationary_decomp = cmdtool.get_bool("accelerate_stationary_decomp", false);
-		cmdtool.add_usage("accelerate_stationary_decomp: Boolean. If true, uses FFT to compute the spectral decomposition \
-                     and to draw the fluctuating forces with optimal run-time complexity. \
-                    No effect if <stationary> is false or if <gaussian_init_val> is true. Default: false.");
-
 	} catch (const ParameterHandler::BadParamException &ex) {
 		cmdtool.show_usage();
 		throw ex;
@@ -106,8 +82,6 @@ int main(int argc, char *argv[]) {
 	cout << "txt_out" << '\t'<< txt_out << endl;
 	cout << "gaussian_init_val" << '\t'<< gaussian_init_val << endl;
 	cout << "darboux_sum" << '\t' << darboux_sum << endl;
-	cout << "stationary" << '\t' << stationary << endl;
-	cout << "accelerate_stationary_decomp" << '\t' << accelerate_stationary_decomp << endl;
 
 	filesystem::path out_path = out_folder;
 
@@ -245,30 +219,23 @@ int main(int argc, char *argv[]) {
 
             if(!gaussian_init_val)
             {
-                if(!accelerate_stationary_decomp)
+                tensor<double,4> ff_cov({num_ts,num_obs,num_ts,num_obs});
+                for(size_t t=0; t<num_ts; t++)
                 {
-                    tensor<double,4> ff_cov({num_ts,num_obs,num_ts,num_obs});
-                    for(size_t t=0; t<num_ts; t++)
+                    for(size_t s=0; s<num_ts; s++)
                     {
-                        for(size_t s=0; s<num_ts; s++)
+                        for(size_t i=0; i<num_obs; i++)
                         {
-                            for(size_t i=0; i<num_obs; i++)
+                            for(size_t j=0; j<num_obs; j++)
                             {
-                                for(size_t j=0; j<num_obs; j++)
-                                {
-                                    ff_cov(t,i,s,j) = ff_cov_stationary(num_ts-1+t-s,i,j);
-                                }
+                                ff_cov(t,i,s,j) = ff_cov_stationary(num_ts-1+t-s,i,j);
                             }
                         }
                     }
-                    rfg.init_cov(ff_average,ff_cov,out_path);
-                    ff_cov.clear();
                 }
-                else
-                {
-                    rfg.init_cov(ff_average,ff_cov_stationary,out_path);
-                    ff_cov_stationary.clear();
-                }
+
+                rfg.init_cov(ff_average,ff_cov,out_path);
+                ff_cov.clear();
             }
             else
             {
@@ -320,8 +287,7 @@ int main(int argc, char *argv[]) {
             gaussian_init_val,
             darboux_sum,
             num_sim,
-            out_path,
-            accelerate_stationary_decomp);
+            out_path);
         cout << "Write simulated trajectories: " << (out_path/"SIM")/"traj.f64" << endl;
         sim.write("traj.f64",out_path/"SIM");
         cout << "Write times: " << (out_path/"SIM")/"times.f64" << endl;

@@ -276,7 +276,7 @@ tensor<double,3> KernelMethods::getStationaryCorrelation(tensor<double,3> &traj,
     }
     corr_test.write("corr_test.txt", "./");
     corr_out.write("corr_out.txt", "./");
-    **/
+    **/ 
     return corr_out;
 }
 
@@ -1598,8 +1598,7 @@ tensor<double,3> KernelMethods::simulateTrajectories(
     bool gaussian_init_val,
     bool darboux_sum,
     size_t num_sim,
-    filesystem::path out_path,
-    bool accelerate_stationary_decomp)
+    filesystem::path out_path)
 {
     size_t num_traj = traj.shape[0];
     size_t num_ts = traj.shape[1];
@@ -1633,16 +1632,9 @@ tensor<double,3> KernelMethods::simulateTrajectories(
         sim.alloc({num_ts,num_obs,num_sim});
         for(size_t n=0;n<num_sim; n++)
         {
+            rand_ff_buffer = rfg.pull_multivariate_gaussian();
             if(!gaussian_init_val)
             {
-                if(accelerate_stationary_decomp)
-                {
-                    rand_ff_buffer = rfg.pull_stationary_multivariate_gaussian();
-                }
-                else
-                {
-                    rand_ff_buffer = rfg.pull_multivariate_gaussian();
-                }
                 for(size_t i=0; i<num_obs; i++)
                 {
                     sim(0,i,n) = traj(n%num_traj,0,i); // set initial value
@@ -1651,7 +1643,6 @@ tensor<double,3> KernelMethods::simulateTrajectories(
             }
             else
             {
-                rand_ff_buffer = rfg.pull_multivariate_gaussian();
                 for(size_t i=0; i<num_obs; i++)
                 {
                     sim(0,i,n) = rand_ff_buffer(0,i); // set initial value
@@ -1714,16 +1705,10 @@ tensor<double,3> KernelMethods::simulateTrajectories(
         for(size_t n=0;n<num_sim; n++)
         {
 
+            rand_ff_buffer = rfg.pull_multivariate_gaussian();
+
             if(!gaussian_init_val)
             {
-                if(accelerate_stationary_decomp)
-                {
-                    rand_ff_buffer = rfg.pull_stationary_multivariate_gaussian();
-                }
-                else
-                {
-                    rand_ff_buffer = rfg.pull_multivariate_gaussian();
-                }
                 for(size_t i=0; i<num_obs; i++)
                 {
                     simulated_trajectory(0,i) = traj(n%num_traj,0,i); // set initial value
@@ -1732,7 +1717,6 @@ tensor<double,3> KernelMethods::simulateTrajectories(
             }
             else
             {
-                rand_ff_buffer = rfg.pull_multivariate_gaussian();
                 for(size_t i=0; i<num_obs; i++)
                 {
                     simulated_trajectory(0,i) = rand_ff_buffer(0,i); // set initial value
