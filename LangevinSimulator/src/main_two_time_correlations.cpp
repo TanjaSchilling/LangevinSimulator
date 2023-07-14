@@ -113,6 +113,7 @@ int main(int argc, char** argv) {
 	cout << "txt_out" << '\t'<< txt_out << endl;
 	cout << "mollifier_width" << '\t'<< mollifier_width << endl;
 	cout << "stationary" << '\t'<< stationary << endl;
+	cout << "chop_stationary_trajectories" << '\t'<< chop_stationary_trajectories << endl;
 
 	filesystem::path out_path = out_folder;
 	filesystem::path in_path = in_folder;

@@ -21,6 +21,7 @@ If not, see <https://www.gnu.org/licenses/>.
 **/
 
 #include "RandomForceGenerator.hpp"
+#include "FourierTransforms.hpp"
 
 #include <iostream>
 #include <sys/time.h>
@@ -33,6 +34,9 @@ If not, see <https://www.gnu.org/licenses/>.
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_complex.h>
+#include <gsl/gsl_complex_math.h>
 
 using namespace std;
 using namespace TensorUtils;
@@ -75,6 +79,135 @@ void RandomForceGenerator::init_cov(tensor<double,2> &ff_average, tensor<double,
     ff_cov.write("ff_decomp.f64",out_path);
 }
 
+void RandomForceGenerator::init_cov(tensor<double,2> &ff_average, tensor<double,3> &ff_cov, filesystem::path out_path)
+{
+    this->ff_average = ff_average;
+    num_ts = ff_average.shape[0];
+    num_obs = ff_average.shape[1];
+
+    num_pad = 2*num_ts-1;
+    while(num_pad&(num_pad-1)) // num_pad is not a power of 2!
+    {
+        num_pad++;
+    }
+    tensor<double> corr_pad({num_obs,num_obs,num_pad},0.0);
+    for(size_t o2=0;o2<num_obs;o2++)
+    {
+        for(size_t o1=0;o1<num_obs;o1++)
+        {
+            for(int t=0;t<(int)num_ts;t++)
+            {
+                corr_pad(o1,o2,t) = ff_cov(num_ts-1+t,o1,o2);
+                if(t!=0)
+                {
+                    corr_pad(o1,o2,num_pad-t) = ff_cov(num_ts-1-t,o1,o2);
+                }
+            }
+        }
+    }
+    lookup_table = new double[num_pad];
+    FFTBW::FourierTransforms<double>::initLookUp(lookup_table,num_pad);
+    for(size_t o2=0;o2<num_obs;o2++)
+    {
+        for(size_t o1=0;o1<num_obs;o1++)
+        {
+            FFTBW::FourierTransforms<double>::fftReal(&corr_pad(o1,o2),num_pad,+1,lookup_table,false);
+        }
+    }
+    stationary_decomp.resize(num_pad/2+1);
+    for(auto it=stationary_decomp.begin(); it!=stationary_decomp.end(); it++)
+    {
+        *it = gsl_matrix_complex_alloc(num_obs,num_obs);
+    }
+    gsl_matrix_complex *cmat = gsl_matrix_complex_alloc(num_obs, num_obs);
+    gsl_vector *eval = gsl_vector_alloc (num_obs);
+    gsl_eigen_hermv_workspace * w = gsl_eigen_hermv_alloc(num_obs);
+    for(size_t o2=0;o2<num_obs;o2++)
+    {
+        for(size_t o1=0;o1<num_obs;o1++)
+        {
+            gsl_matrix_complex_set(cmat, o1, o2, {corr_pad(o1,o2,0), 0.0});
+        }
+    }
+    gsl_eigen_hermv(cmat, eval, stationary_decomp[0], w);
+    for(size_t o2=0;o2<num_obs;o2++)
+    {
+        double tmp = gsl_vector_get(eval,o2);
+        if(tmp<0)
+        {
+            // cout << tmp << endl;
+            tmp=0;
+        }
+        else
+        {
+            tmp = sqrt(tmp);
+        }
+        for(size_t o1=0;o1<num_obs;o1++)
+        {
+            gsl_complex cvalue = gsl_matrix_complex_get(stationary_decomp[0], o1, o2);
+            gsl_matrix_complex_set(stationary_decomp[0], o1, o2, gsl_complex_mul(cvalue,{tmp, 0.0}));
+        }
+    }
+    for(size_t k=1; k<num_pad/2; k++)
+    {
+        for(size_t o2=0;o2<num_obs;o2++)
+        {
+            for(size_t o1=0;o1<num_obs;o1++)
+            {
+                gsl_matrix_complex_set(cmat,o1,o2,{corr_pad(o1,o2,2*k),corr_pad(o1,o2,2*k+1)});
+            }
+        }
+        gsl_eigen_hermv(cmat, eval, stationary_decomp[k], w);
+        for(size_t o2=0;o2<num_obs;o2++)
+        {
+            double tmp = gsl_vector_get(eval,o2);
+            if(tmp<0)
+            {
+                // cout << tmp << endl;
+                tmp=0;
+            }
+            else
+            {
+                tmp = sqrt(tmp);
+            }
+            for(size_t o1=0;o1<num_obs;o1++)
+            {
+                gsl_complex cvalue = gsl_matrix_complex_get(stationary_decomp[k], o1, o2);
+                gsl_matrix_complex_set(stationary_decomp[k], o1, o2, gsl_complex_mul(cvalue,{tmp, 0.0}));
+            }
+        }
+    }
+    for(size_t o2=0;o2<num_obs;o2++)
+    {
+        for(size_t o1=0;o1<num_obs;o1++)
+        {
+            gsl_matrix_complex_set(cmat, o1, o2, {corr_pad(o1,o2,1), 0.0});
+        }
+    }
+    gsl_eigen_hermv(cmat, eval, stationary_decomp[num_pad/2], w);
+    for(size_t o2=0;o2<num_obs;o2++)
+    {
+        double tmp = gsl_vector_get(eval,o2);
+        if(tmp<0)
+        {
+            // cout << tmp << endl;
+            tmp=0;
+        }
+        else
+        {
+            tmp = sqrt(tmp);
+        }
+        for(size_t o1=0;o1<num_obs;o1++)
+        {
+            gsl_complex cvalue = gsl_matrix_complex_get(stationary_decomp[num_pad/2], o1, o2);
+            gsl_matrix_complex_set(stationary_decomp[num_pad/2], o1, o2, gsl_complex_mul(cvalue,{tmp, 0.0}));
+        }
+    }
+    gsl_eigen_hermv_free(w);
+    gsl_vector_free(eval);
+    gsl_matrix_complex_free(cmat);
+}
+
 void RandomForceGenerator::init_decomp(tensor<double,2> &ff_average, tensor<double,4> &ff_decomp)
 {
     // store average
@@ -100,6 +233,11 @@ RandomForceGenerator::~RandomForceGenerator()
     gsl_matrix_free(ff_decomp);
     gsl_vector_free(buffer);
     gsl_vector_free(buffer2);
+    for(auto it=stationary_decomp.begin(); it!=stationary_decomp.end(); it++)
+    {
+        gsl_matrix_complex_free(*it);
+    }
+    delete[] lookup_table;
 }
 
 void RandomForceGenerator::set_decomp(tensor<double,4> &source, gsl_matrix *dest)
@@ -153,3 +291,49 @@ tensor<double,2> RandomForceGenerator::pull_multivariate_gaussian()
     rand_mult_gaussian += ff_average;
     return rand_mult_gaussian;
 }
+
+tensor<double,2> RandomForceGenerator::pull_stationary_multivariate_gaussian()
+{
+    gsl_vector_complex *buffer = gsl_vector_complex_alloc(num_obs);
+    gsl_vector_complex *buffer2 = gsl_vector_complex_alloc(num_obs);
+    tensor<double,2> ff_coeff({num_obs, num_pad});
+    for(size_t k=0; k<num_pad/2+1; k++)
+    {
+        for(size_t o=0; o<num_obs; o++)
+        {
+            gsl_vector_complex_set(buffer,o,{gsl_ran_gaussian(rng_r,1.0/sqrt(2)), gsl_ran_gaussian(rng_r,1.0)/sqrt(2)});
+        }
+        gsl_blas_zgemv(CblasNoTrans,{1.0, 0.0},stationary_decomp[k],buffer,{0.0, 0.0},buffer2);
+        for(size_t o=0; o<num_obs; o++)
+        {
+            gsl_complex cvalue = gsl_vector_complex_get(buffer2,o);
+            if(k==0)
+            {
+                ff_coeff(o,0) = cvalue.dat[0]*sqrt(2);
+            }
+            else if(k==num_pad/2)
+            {
+                ff_coeff(o,1) = cvalue.dat[0]*sqrt(2);
+            }
+            else
+            {
+                ff_coeff(o,2*k) = cvalue.dat[0];
+                ff_coeff(o,2*k+1) = cvalue.dat[1];
+            }
+        }
+    }
+    gsl_vector_complex_free(buffer);
+    gsl_vector_complex_free(buffer2);
+    for(size_t o=0; o<num_obs; o++)
+    {
+        FFTBW::FourierTransforms<double>::fftReal(&ff_coeff(o),num_pad,-1,lookup_table,false);
+    }
+    ff_coeff *= 2.0/sqrt(num_pad);
+    ff_coeff = ff_coeff.transpose({1,0});
+    tensor<double, 2> ff({num_ts,num_obs});
+    ff << ff_coeff[0];
+    ff_coeff.clear();
+    ff += ff_average;
+    return ff;
+}
+

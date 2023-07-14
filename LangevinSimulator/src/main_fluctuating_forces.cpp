@@ -70,6 +70,8 @@ int main(int argc, char *argv[]) {
 	cout << "txt_out" << '\t'<< txt_out << endl;
 	cout << "gaussian_init_val" << '\t'<< gaussian_init_val << endl;
 	cout << "darboux_sum" << '\t' << darboux_sum << endl;
+	cout << "stationary" << '\t' << stationary << endl;
+
 
 	filesystem::path out_path = out_folder;
 
