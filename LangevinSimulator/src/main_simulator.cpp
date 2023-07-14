@@ -320,7 +320,8 @@ int main(int argc, char *argv[]) {
             gaussian_init_val,
             darboux_sum,
             num_sim,
-            out_path);
+            out_path,
+            accelerate_stationary_decomp);
         cout << "Write simulated trajectories: " << (out_path/"SIM")/"traj.f64" << endl;
         sim.write("traj.f64",out_path/"SIM");
         cout << "Write times: " << (out_path/"SIM")/"times.f64" << endl;
