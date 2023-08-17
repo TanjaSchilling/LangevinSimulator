@@ -35,10 +35,11 @@ params.shift = True
 params.fluctuating_force = True 
 params.num_sim = 20000
 params.txt_out = False
-params.mollifier_width = 5
+params.mollifier_width = 0
 params.gaussian_init_val = False
 params.darboux_sum = True
 params.stationary = True
+params.accelerate_stationary_decomp = False
 
 # RUN CPP EXECUTABLES
 run(params)

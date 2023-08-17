@@ -49,6 +49,7 @@ params.mollifier_width = 0
 params.gaussian_init_val = False
 params.darboux_sum = True
 params.stationary = False
+params.accelerate_stationary_decomp = False
 
 # RUN CPP EXECUTABLES
 run(params)
