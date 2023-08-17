@@ -47,6 +47,7 @@ class RandomForceGenerator
             \brief Computes and writes the rotation matrix for a given covariance matrix. On exit, the RandomForceGenerator is initialized.
         */
         void init_cov(TensorUtils::tensor<double,2> &ff_average, TensorUtils::tensor<double,4> &ff_cov, std::filesystem::path out_path);
+        void init_cov(TensorUtils::tensor<double,2> &ff_average, TensorUtils::tensor<double,3> &ff_cov, std::filesystem::path out_path);
 
         /*!
             \brief Initializes the RandomForceGenerator with a previously computed rotation matrix.
@@ -61,6 +62,7 @@ class RandomForceGenerator
             and `z` contains independent, standard normal distributed random numbers.
         */
         TensorUtils::tensor<double,2> pull_multivariate_gaussian();
+        TensorUtils::tensor<double,2> pull_stationary_multivariate_gaussian();
 
     protected:
 
@@ -87,6 +89,11 @@ class RandomForceGenerator
         const gsl_rng_type * rng_T;
         //! \private
         gsl_rng * rng_r;
+
+        std::vector<gsl_matrix_complex*> stationary_decomp;
+        size_t num_obs;
+        size_t num_ts;
+        size_t num_pad;
 };
 
 #endif // RANDOMFORCEGENERATOR_HPP
